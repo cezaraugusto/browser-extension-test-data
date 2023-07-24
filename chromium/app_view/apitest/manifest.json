@@ -1,0 +1,11 @@
+{
+  "name": "Platform App Test: <appview>",
+  "version": "2",
+  "manifest_version": 2,
+  "permissions": ["appview"],
+  "app": {
+    "background": {
+      "scripts": ["test.js"]
+    }
+  }
+}
