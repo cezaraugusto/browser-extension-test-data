@@ -1,8 +1,31 @@
 # Bug 03 , theme build crashes on `additional_backgrounds` array (path.basename on Array)
 
-**CLI:** reproduced on `extension@3.18.4` **and** `extension@3.18.4-canary.320.767e107`
+**CLI:** reproduced on `extension@3.18.4` and `…canary.320.767e107`
 **Severity:** medium , blocks any theme that declares more than one background image
-**Status:** reproducible, isolated, **not fixed on canary**
+**Status:** ✅ FIXED , validate on `extension@3.18.4-canary.321.403955d`
+
+## Resolution (2026-06-18)
+
+Confirmed and fixed.
+
+- **Root cause:** `theme.images` values are usually a single path string
+  (e.g. `theme_frame`), but `additional_backgrounds` is an **array** of paths.
+  The theme manifest override passed the value straight to `path.basename()`
+  (string-only) → `TypeError [ERR_INVALID_ARG_TYPE]`.
+- **Fix:** `theme()` now maps the rewrite over arrays
+  (`Array.isArray(value) ? value.map(rewrite) : rewrite(value)`); single-string
+  paths keep working. `programs/develop/.../manifest-overrides/common/theme.ts`
+  (branch `fix/page-script-tla-and-vendored-minjs-passthrough`, commit `403955d`).
+- **Validate:** the committed repro builds clean (exit 0) on the canary above and
+  the output manifest references `theme/images/weta.png` + `theme/images/weta-left.png`.
+
+> **Separate pre-existing gap (not this crash):** theme image *files* are never
+> copied to `dist/theme/images/` for *any* theme , single-string or array. The
+> `theme` field group is computed by `browser-extension-manifest-fields` but no
+> plugin consumes it into an emit/include list (and that package also skips array
+> values). So the manifest points at images that aren't emitted. This affects all
+> themes equally and is orthogonal to the crash; worth a dedicated report if you
+> want themes to actually render.
 
 ## Repro
 

@@ -5,36 +5,34 @@ Each report is self-contained: a committed, pristine repro under `repro/`, the e
 build command, full error output, and root-cause analysis. Hand the absolute path of
 a report to the Extension.js maintainer/AI.
 
-## ▶ Open for the next canary (action list)
+## ✅ All four fixed , validate on `extension@3.18.4-canary.321.403955d`
 
-Two confirmed framework bugs are still open on `extension@3.18.4-canary.320.767e107`.
-Both have a committed, pristine repro that fails with exit 1. Fixing these should
-recover 2 more corpus samples (`themes/weta_mirror`, `tutorial.custom-cursor`),
-moving the corpus from 210 → 212 / 221.
+Bugs 03 and 04 are now fixed too (branch `fix/page-script-tla-and-vendored-minjs-passthrough`,
+commit `403955d`). The new canary `3.18.4-canary.321.403955d` carries all four fixes;
+`extension@canary` also points at it.
 
-1. **Bug 03 , theme `additional_backgrounds` array crash**
-   ([report](03-theme-additional-backgrounds-array.md) · repro `repro/03-theme-additional-backgrounds-array`)
-   `theme_getBasename` calls `path.basename()` on `theme.images.additional_backgrounds`,
-   which is an array → `TypeError [ERR_INVALID_ARG_TYPE]`. Source pointer:
-   `…/extension-develop/dist/0~rspack-config.mjs:821` (`theme_getBasename`).
-   **Fix:** map `basename` over the array , `(Array.isArray(v) ? v : [v]).map(p => path.basename(p))`.
+- **Bug 03 , theme `additional_backgrounds` array crash → FIXED.** The theme manifest
+  override mapped `path.basename()` over each entry instead of passing the array straight
+  in. Repro now builds (exit 0). *Separate pre-existing note:* theme image **files** are
+  not emitted to `dist/theme/images/` for any theme (single-string or array) , the
+  manifest references them but the copy step is unwired. That's orthogonal to this crash
+  and affects all themes equally; flag as its own follow-up if you want themes to render.
+- **Bug 04 , `chrome-extension://` CSS URL passthrough → FIXED.** `chrome-extension:` and
+  `moz-extension:` requests are externalized as `asset`, so the `url()` (and the
+  `__MSG_@@extension_id__` placeholder) survive verbatim. Ordinary relative/`https:` URLs
+  still resolve and emit normally.
 
-2. **Bug 04 , `chrome-extension://` URL scheme not passed through**
-   ([report](04-chrome-extension-url-scheme-passthrough.md) · repro `repro/04-chrome-extension-url-scheme-passthrough`)
-   `url('chrome-extension://__MSG_@@extension_id__/dino.png')` in CSS is sent to the
-   module resolver → "Unhandled scheme". It is a runtime self-reference, not a build
-   input. **Fix:** treat `chrome-extension:` / `moz-extension:` as passthrough schemes
-   (like `data:`/`file:`); leave the `url()` and the `__MSG_@@extension_id__` placeholder verbatim.
-
-Verify each before/after with:
+Re-validate all four before/after with:
 
 ```sh
 cp -R bug-reports/repro/<name> /tmp/<name> && cd /tmp/<name>
+EXTENSION_SKIP_INSTALL=1 npx -y extension@3.18.4-canary.321.403955d build --browser chrome --silent
+# …or track the channel
 EXTENSION_SKIP_INSTALL=1 npx -y extension@canary build --browser chrome --silent
 ```
 
-Already fixed on this canary (no action): Bug 01 (vendored `*.min.js` passthrough) and
-Bug 02 (page scripts built as ES modules). Re-validate they still pass after the new fixes.
+Keep filing in the same shape , the pristine-repro + exact-command + full-error + root-cause
+format made all four fast to triage. Next round welcome.
 
 ## Status , triaged & fixed (2026-06-18)
 
@@ -53,7 +51,8 @@ npx -y extension@canary build --browser chrome --silent
 |---|--------|---------|-----------------|
 | 01 | [content-script wrapper breaks minified polyfill](01-content-script-wrapper-breaks-minified-polyfill.md) | **Fixture was invalid JS** (upstream MDN ships a corrupt 8 KB polyfill; `node --check` rejects it). Framework improved: vendored `*.min.js` passes through untouched. | ✅ **Done** , swapped in genuine `webextension-polyfill@0.12.0` min.js; **builds clean on canary (exit 0)**. The corrupt file is an upstream-MDN defect, not a framework bug. |
 | 02 | [popup top-level await not treated as module](02-popup-top-level-await-not-treated-as-module.md) | **Confirmed framework bug , FIXED.** Page/module scripts are now built as ES modules, so top-level await parses. | ✅ **Validated** , builds on canary (exit 0); same repro fails on `3.18.4` (exit 1). |
-| 03 | [theme `additional_backgrounds` array crash](03-theme-additional-backgrounds-array.md) | **New framework bug , NOT fixed on canary.** `path.basename()` called on the `additional_backgrounds` **array** → `ERR_INVALID_ARG_TYPE`. Blocks multi-background themes. | Map `basename` over the array in `theme_getBasename`. Repro fails on both `3.18.4` and canary (exit 1). |
+| 03 | [theme `additional_backgrounds` array crash](03-theme-additional-backgrounds-array.md) | **Confirmed framework bug , FIXED** on `…canary.321.403955d`. Override now maps `basename` over the array. | ✅ Builds on the new canary (exit 0); fails on `3.18.4` / `…canary.320` (exit 1). Note: theme image *files* still aren't emitted for any theme (separate pre-existing gap). |
+| 04 | [`chrome-extension://` URL scheme passthrough](04-chrome-extension-url-scheme-passthrough.md) | **Confirmed framework bug , FIXED** on `…canary.321.403955d`. `chrome-extension:`/`moz-extension:` externalized as `asset`; URL + `__MSG_@@extension_id__` left verbatim. | ✅ Builds on the new canary (exit 0); fails on `3.18.4` / `…canary.320` (exit 1). |
 
 ### Canary corpus impact (validated 2026-06-18)
 

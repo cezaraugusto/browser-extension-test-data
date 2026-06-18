@@ -1,8 +1,25 @@
 # Bug 04 , `chrome-extension://` URLs in CSS fail build (should pass through)
 
-**CLI:** reproduced on `extension@3.18.4` **and** `extension@3.18.4-canary.320.767e107`
+**CLI:** reproduced on `extension@3.18.4` and `…canary.320.767e107`
 **Severity:** medium , blocks extensions that self-reference assets via `chrome-extension://__MSG_@@extension_id__/…`
-**Status:** reproducible, isolated, **not fixed on canary**
+**Status:** ✅ FIXED , validate on `extension@3.18.4-canary.321.403955d`
+
+## Resolution (2026-06-18)
+
+Confirmed and fixed exactly as suggested.
+
+- **Root cause:** `chrome-extension://__MSG_@@extension_id__/<path>` is a runtime
+  self-reference resolved by the browser against the live extension origin, not a
+  build-time module. The bundler routed the CSS `url()` through the module
+  resolver, which rejected the unknown scheme ("Unhandled scheme").
+- **Fix:** `chrome-extension:` and `moz-extension:` requests are externalized with
+  the `asset` external type, so the bundler emits the URL string verbatim (the
+  `__MSG_@@extension_id__` placeholder is preserved for runtime i18n). Ordinary
+  relative and `https:` URLs are untouched and still resolve/emit normally.
+  `programs/develop/rspack-config.ts` (branch
+  `fix/page-script-tla-and-vendored-minjs-passthrough`, commit `403955d`).
+- **Validate:** the committed repro builds clean (exit 0) on the canary above and
+  the emitted CSS keeps `url('chrome-extension://__MSG_@@extension_id__/dino.png')`.
 
 ## Repro
 
