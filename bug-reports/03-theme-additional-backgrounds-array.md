@@ -43,6 +43,14 @@ manifest. **Pending:** publish `browser-extension-manifest-fields@2.2.5`, then
 bump the extension.js dependency (`^2.2.3` → `^2.2.5`) and cut a new canary so
 the array case emits in CI too.
 
+> **⚠️ Confirmed still open on `3.18.4-canary.321.403955d`.** The crash is fixed
+> (build exits 0) and the output manifest references
+> `additional_backgrounds: ["theme/images/weta.png","theme/images/weta-left.png"]`,
+> but **neither image file is emitted** to `dist/chrome/theme/images/` , the built
+> theme references assets that don't exist. So the array case needs the `2.2.5`
+> publish + dep bump + a fresh canary before it is truly done. (The build-exit-0
+> verdict hides this; see the asset-integrity note in `../FINDINGS.md`.)
+
 ## Repro
 
 Self-contained copy (build it directly , no install needed):

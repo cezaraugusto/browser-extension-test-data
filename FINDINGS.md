@@ -31,6 +31,30 @@ passthrough). Corpus moves **208 → 210 / 221**: `tutorial.tabs-manager` and
 
 See `bug-reports/README.md` → "Open for the next canary" for the action list.
 
+### Update , second canary `3.18.4-canary.321.403955d` (all 4 fixes)
+
+Full 221 × {chrome,firefox,edge} corpus run, diffed against the `3.18.4` baseline:
+
+- **212 / 221 pass · 0 regressions · 4 progressions.** The fixes introduced **no new
+  errors** , notably the Bug 02 ESM change (now builds *every* page script as a module)
+  broke nothing previously passing.
+- Progressions are exactly the 4 filed bugs: `weta_mirror` (03), `sandbox` + `tabs-manager`
+  (02), `custom-cursor` (04).
+- The remaining **9 are all non-framework** (verified, no unknowns): 8 sample-side
+  (4 pre-built `dist/` refs, 4 missing source/asset files) + 1 corrupt-upstream polyfill.
+
+**Caveat , Bug 03 passes the build but the output is incomplete.** On this canary the
+theme manifest references `theme/images/weta.png` + `weta-left.png` but the files are
+**not emitted** to `dist/`. The crash is fixed; the array-image emission still needs
+`browser-extension-manifest-fields@2.2.5` published + a dep bump + a fresh canary.
+
+### Testbed blind spot to close (next)
+
+The matrix scores on build exit code, so Bug 03 reads as PASS despite dropping declared
+assets. Add an **asset-integrity check** to `run-matrix`: after a passing build, assert
+every file referenced by the emitted `manifest.json` (icons, theme images, web-accessible
+resources, HTML/script srcs) exists in `dist/`. Downgrade to `fail:missing-assets` otherwise.
+
 ## Failure taxonomy (13)
 
 ### A. Manifest references pre-built artifacts (5) , *sample expects its own bundler*
