@@ -1,0 +1,75 @@
+name: Weekly QA
+
+# Fetches upstream extension samples and verifies the *published* Extension.js
+# CLI can build them. Runs weekly + on demand. Goes red only on regressions
+# (a sample that built last week and no longer does).
+#
+# Two lanes:
+#   linux: chrome,firefox,edge (the gating baseline → baseline.json)
+#   macos: safari + the chromium browsers, non-gating until a stable Safari
+#            baseline exists (→ baseline.safari.json)
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      extension_tag:
+        description: 'Extension.js dist-tag to test (latest | canary | next)'
+        default: 'latest'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      EXTENSION_TAG: ${{ github.event.inputs.extension_tag || 'latest' }}
+      QA_CONCURRENCY: '6'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node scripts/sync.mjs
+      - run: node scripts/discover.mjs
+      # One pass over the whole corpus: install-tier samples get `npm install`,
+      # raw samples build as-is. Produces a single complete report.
+      - run: node scripts/run-matrix.mjs --tier all --install --browsers chrome,firefox,edge
+      - id: report
+        run: node scripts/report.mjs --markdown
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: {name: qa-report-linux, path: reports/}
+      - name: Open issue on regression
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('reports/REPORT.md', 'utf8');
+            await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              title: `Weekly QA regression (linux): ${new Date().toISOString().slice(0,10)}`,
+              body, labels: ['qa-regression'],
+            });
+
+  macos:
+    runs-on: macos-latest # Safari builds via Xcode: macOS only
+    timeout-minutes: 90
+    continue-on-error: true # non-gating until a stable Safari baseline is recorded
+    env:
+      EXTENSION_TAG: ${{ github.event.inputs.extension_tag || 'latest' }}
+      QA_CONCURRENCY: '4'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node scripts/sync.mjs
+      - run: node scripts/discover.mjs
+      - run: node scripts/run-matrix.mjs --tier all --install --browsers chrome,firefox,edge,safari
+      - run: node scripts/report.mjs --markdown --baseline baseline.safari.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: {name: qa-report-macos, path: reports/}

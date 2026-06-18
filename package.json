@@ -1,0 +1,23 @@
+{
+  "name": "browser-extension-test-data",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Automated QA testbed: fetches real-world extension samples (MDN, Chrome, Chromium, Edge, Opera, Extension.js) from upstream and verifies Extension.js can build and run them.",
+  "type": "module",
+  "license": "MIT",
+  "author": {
+    "name": "Cezar Augusto",
+    "email": "boss@cezaraugusto.net",
+    "url": "https://cezaraugusto.com"
+  },
+  "scripts": {
+    "sync": "node scripts/sync.mjs",
+    "discover": "node scripts/discover.mjs",
+    "matrix": "node scripts/run-matrix.mjs --tier all --install --browsers chrome,firefox,edge",
+    "matrix:raw": "node scripts/run-matrix.mjs --tier raw --browsers chrome,firefox,edge",
+    "matrix:smoke": "node scripts/run-matrix.mjs --tier raw --browsers chrome,firefox --limit 12",
+    "report": "node scripts/report.mjs --markdown",
+    "qa": "node scripts/sync.mjs && node scripts/discover.mjs && npm run matrix && node scripts/report.mjs --markdown",
+    "baseline:update": "node scripts/report.mjs --update"
+  }
+}

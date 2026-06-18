@@ -1,0 +1,71 @@
+{
+  "$comment": "Registry of upstream extension-sample repositories. The weekly QA job clones each enabled source on-demand into .cache/<id> (gitignored), pins the tested commit in sources.lock.json, discovers samples under `scan`, and runs `extension build` against each. `layout` controls discovery: 'manifest-root' = a sample is any dir directly containing manifest.json (MDN/Chrome style); 'project-root' = each immediate child of a scan dir is a sample whose manifest lives somewhere beneath (e.g. src/manifest.json, Extension.js style). Add a new browser ecosystem by adding an entry here: no code changes needed.",
+  "sources": [
+    {
+      "id": "mdn",
+      "name": "MDN webextensions-examples",
+      "repo": "https://github.com/mdn/webextensions-examples",
+      "ref": "main",
+      "api": "browser",
+      "layout": "manifest-root",
+      "scan": ["."],
+      "ignore": ["node_modules", "build", "dist", ".github", "celtic_diary_data"],
+      "enabled": true
+    },
+    {
+      "id": "chrome",
+      "name": "GoogleChrome chrome-extensions-samples",
+      "repo": "https://github.com/GoogleChrome/chrome-extensions-samples",
+      "ref": "main",
+      "api": "chrome",
+      "layout": "manifest-root",
+      "scan": ["api-samples", "functional-samples"],
+      "ignore": ["node_modules", "build", "dist", "_archive", ".github"],
+      "enabled": true
+    },
+    {
+      "id": "extensionjs",
+      "name": "Extension.js first-party examples",
+      "repo": "https://github.com/extension-js/examples",
+      "ref": "main",
+      "api": "mixed",
+      "layout": "project-root",
+      "scan": ["examples"],
+      "ignore": ["node_modules", "dist", "build", ".extension", "public", "scripts"],
+      "enabled": true
+    },
+    {
+      "id": "chromium",
+      "name": "Chromium test extensions",
+      "repo": "https://chromium.googlesource.com/chromium/src",
+      "ref": "main",
+      "api": "chrome",
+      "scan": ["extensions/test/data", "chrome/test/data/extensions/api_test"],
+      "ignore": ["node_modules"],
+      "enabled": false,
+      "note": "Chromium has no standalone samples repo; cloning the full tree is huge. Enable only with a sparse-checkout strategy (planned). Disabled by default so the weekly run stays fast."
+    },
+    {
+      "id": "edge",
+      "name": "Microsoft Edge extension samples",
+      "repo": "https://github.com/MicrosoftEdge/MicrosoftEdge-Extensions",
+      "ref": "main",
+      "api": "chrome",
+      "scan": ["."],
+      "ignore": ["node_modules", "build", "dist", ".github"],
+      "enabled": false,
+      "note": "Candidate upstream: verify the repo URL and that sample dirs carry manifest.json before enabling. Edge consumes Chromium MV3, so `--browser edge` is the relevant target."
+    },
+    {
+      "id": "opera",
+      "name": "Opera extension samples",
+      "repo": "https://github.com/operasoftware/extension-samples",
+      "ref": "master",
+      "api": "chrome",
+      "scan": ["."],
+      "ignore": ["node_modules", "build", "dist", ".github"],
+      "enabled": false,
+      "note": "Opera's sample repos are largely unmaintained; URL must be confirmed before enabling. Opera is Chromium-based, so `--browser chromium` covers it."
+    }
+  ]
+}

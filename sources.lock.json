@@ -1,0 +1,20 @@
+{
+  "mdn": {
+    "sha": "ef4192ffa7f74f8bfd12b2808668e0fcc808a7d7",
+    "ref": "main",
+    "repo": "https://github.com/mdn/webextensions-examples",
+    "fetchedAt": "2026-06-18T18:28:18.287Z"
+  },
+  "chrome": {
+    "sha": "c4393862e164d74d1b6112ced19f2a2bbe26506c",
+    "ref": "main",
+    "repo": "https://github.com/GoogleChrome/chrome-extensions-samples",
+    "fetchedAt": "2026-06-18T18:28:22.429Z"
+  },
+  "extensionjs": {
+    "sha": "691f425544bcf723a04984f52ba958195c32d6c9",
+    "ref": "main",
+    "repo": "https://github.com/extension-js/examples",
+    "fetchedAt": "2026-06-18T18:28:25.493Z"
+  }
+}

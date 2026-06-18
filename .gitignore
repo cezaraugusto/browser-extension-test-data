@@ -1,0 +1,18 @@
+# On-demand upstream clones: never vendored, never committed.
+.cache/
+
+# Repo-local Extension.js telemetry dir.
+.xdg-config/
+
+# Generated run artifacts. baseline.json (tracked, at repo root) is the only
+# state that persists between runs; everything under reports/ is regenerated.
+reports/*
+!reports/.gitkeep
+
+# Build output (samples build in OS temp; this guards against stray local builds).
+dist/
+build/
+.extension/
+
+node_modules/
+.DS_Store

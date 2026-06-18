@@ -1,0 +1,6 @@
+{
+  "$comment": "Expected build verdict per sample keyed by <source>/<rel>. Refresh with npm run baseline:update after reviewing a run. Weekly job fails ONLY on regressions vs this file. Seed empty: first full run populates it.",
+  "updatedAt": null,
+  "cli": null,
+  "samples": {}
+}
