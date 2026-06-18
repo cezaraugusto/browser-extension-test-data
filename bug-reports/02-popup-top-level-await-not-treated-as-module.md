@@ -23,6 +23,12 @@ Confirmed as a genuine framework bug and fixed.
   wraps the top-level await correctly.
 - **Validate:** the committed repro builds clean on the canary above.
 
+### ✅ Confirmed (2026-06-18)
+
+Verified empirically: repro **builds clean , exit 0** on
+`extension@3.18.4-canary.320.767e107`, and **fails , exit 1** on `extension@3.18.4`.
+In the corpus re-run, `api-samples/sandbox` also recovered from the same ESM fix.
+
 This report's format (pristine repro + exact command + full error + root-cause)
 was ideal , please keep filing in exactly this shape.
 

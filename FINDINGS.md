@@ -13,6 +13,17 @@ browser-specific. This is the baseline the weekly job gates against.
 > (case-sensitive FS), so the first Linux run should be reviewed and re-baselined
 > there , some `url()`/path failures below may differ.
 
+### Update , canary re-validation (2026-06-18)
+
+Re-ran the 13 failures on `extension@3.18.4-canary.320.767e107` (Extension.js fixes for
+[bug 02](bug-reports/02-popup-top-level-await-not-treated-as-module.md) + vendored-min.js
+passthrough). Corpus moves **208 → 210 / 221**: `tutorial.tabs-manager` and
+`api-samples/sandbox` now build. Triage of the rest: 6 sample-side (pre-built `dist/`
+refs / missing sources), 3 missing-asset sample issues, 1 corrupt-upstream polyfill
+(`mocha-client-tests`, builds with the genuine file), and 1 **new framework bug**
+filed as [bug 03](bug-reports/03-theme-additional-backgrounds-array.md) (theme
+`additional_backgrounds` array crash , not fixed on canary). See `bug-reports/README.md`.
+
 ## Failure taxonomy (13)
 
 ### A. Manifest references pre-built artifacts (5) , *sample expects its own bundler*

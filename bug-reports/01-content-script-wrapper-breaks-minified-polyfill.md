@@ -40,6 +40,14 @@ did **not** hold, but there was a real adjacent framework problem that is now fi
 **Net:** not a parser-strictness bug. Swap in the genuine polyfill and re-run on
 the canary; if it still fails, that's a new (real) report worth filing.
 
+### ✅ Validated (2026-06-18)
+
+Fixture replaced with genuine `webextension-polyfill@0.12.0` `dist/browser-polyfill.min.js`
+(10 KB minified, `node --check` clean; the unminified source is 38 KB). On
+`extension@3.18.4-canary.320.767e107` the repro now **builds clean , exit 0**. The
+original 8 KB fixture is what upstream MDN commits and is itself invalid JS (a
+separate upstream-MDN issue); the genuine file confirms the framework handles it.
+
 ## Repro
 
 Self-contained copy (build it directly , no install needed):
