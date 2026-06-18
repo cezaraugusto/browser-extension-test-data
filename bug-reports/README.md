@@ -12,6 +12,17 @@ Fresh canary cut from branch `fix/page-script-tla-and-vendored-minjs-passthrough
 `canary.320`/`canary.321` predate the theme-emission and icon-path commits).
 `extension@canary` also points at it.
 
+> ### ✅ All six validated on `canary.322.7da5ffe` (full corpus)
+>
+> Ran the testbed against `3.18.4-canary.322.7da5ffe` and diffed vs the honest
+> `3.18.4` baseline: **212 / 221 · 9 progressions · 0 regressions · 0 missing-assets.**
+> The 9 recoveries are exactly the bug samples (5 themes, `sandbox`, `tabs-manager`,
+> `custom-cursor`, `getting-started`). All 6 repros build clean **and** pass the
+> asset-integrity check , theme images and leading-slash icons now emit to the path the
+> manifest declares; nothing regressed. The remaining 9 corpus failures are all
+> non-framework (8 sample-side + 1 corrupt-upstream MDN polyfill) , **no Extension.js
+> action left.**
+
 ```sh
 cp -R bug-reports/repro/<name> /tmp/<name> && cd /tmp/<name>
 EXTENSION_SKIP_INSTALL=1 npx -y extension@3.18.4-canary.322.7da5ffe build --browser chrome --silent
