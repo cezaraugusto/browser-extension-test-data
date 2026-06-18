@@ -1,0 +1,41 @@
+{
+  "$comment": "Samples excluded from FRAMEWORK pass/fail accounting because the failure is the sample's or upstream's fault, not an Extension.js defect. Each was verified by hand (see category/reason). run-matrix records these as skip:<category> and does not build them; report.mjs excludes them so the framework pass-rate reflects only what Extension.js is responsible for. Revisit when upstream changes: drop an entry to let a sample re-enter the matrix.",
+  "skips": {
+    "mdn/mocha-client-tests/addon": {
+      "category": "upstream-corrupt",
+      "reason": "upstream MDN commits an invalid 8KB browser-polyfill.min.js (node --check rejects it); builds fine with the genuine file (see bug-reports/01)"
+    },
+    "mdn/menu-demo": {
+      "category": "sample-missing-source",
+      "reason": "manifest references sidebar/panel.css which does not exist in the sample"
+    },
+    "mdn/webpack-modules/addon": {
+      "category": "sample-prebuilt",
+      "reason": "manifest references popup/index.js: built output the sample expects its own webpack to produce"
+    },
+    "mdn/store-collected-images/webextension-with-webpack/extension": {
+      "category": "sample-prebuilt",
+      "reason": "manifest references dist/background.js: expects the sample's own webpack build first"
+    },
+    "mdn/top-sites": {
+      "category": "sample-missing-asset",
+      "reason": "bootstrap CSS @font-face references glyphicon font files not shipped in the sample"
+    },
+    "chrome/api-samples/fontSettings/fontSettings Advanced": {
+      "category": "sample-bad-path",
+      "reason": "slider.css uses url(../images/...) which escapes the extension root; path is wrong relative to the sample root"
+    },
+    "chrome/functional-samples/ai.gemini-in-the-cloud": {
+      "category": "sample-prebuilt",
+      "reason": "manifest references dist/sidepanel.bundle.js: expects the sample's own build first"
+    },
+    "chrome/functional-samples/libraries-xhr-in-sw": {
+      "category": "sample-prebuilt",
+      "reason": "manifest references dist/chrome/sidepanel/script.js: expects the sample's own build first"
+    },
+    "chrome/functional-samples/sample.bookmarks": {
+      "category": "sample-missing-asset",
+      "reason": "third-party/jquery-ui.theme.css references images/ui-icons_*.png not shipped in the sample"
+    }
+  }
+}

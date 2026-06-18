@@ -35,6 +35,11 @@ export function enabledSources() {
   return loadSources().filter((s) => s.enabled)
 }
 
+// Samples excluded from framework accounting (sample-side / upstream faults).
+export function loadSkips() {
+  return readJson(path.join(ROOT, 'skips.json'), {skips: {}}).skips || {}
+}
+
 // Promise pool: run `worker(item)` over `items` with bounded concurrency.
 export async function pool(items, concurrency, worker) {
   const results = new Array(items.length)

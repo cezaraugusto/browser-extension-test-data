@@ -55,6 +55,24 @@ install-tier samples get `npm install` first, raw samples build as-is. Without
 `--install`, install-tier samples are recorded `skip:needs-install` so they never
 count as failures.
 
+### Framework health vs. sample-side skips
+
+Not every failure is Extension.js's fault: some samples reference their own pre-built
+`dist/` output, ship CSS pointing at absent assets, or (in one case) commit invalid JS
+upstream. Those live in `skips.json` with a category + hand-verified reason. The matrix
+records them as `skip` (doesn't build them), and the report excludes them so the headline
+number , **framework health** , answers exactly one question: *of the samples Extension.js
+is responsible for, how many build correctly?* A non-skipped failure is a real product
+defect; a skipped one is the sample's. `report` prints e.g.
+
+```
+Framework health on 3.18.4-canary.322.7da5ffe: 212/212 buildable samples pass (100.0%)
+  · 9 skipped (sample-side/upstream) · 0 framework failures
+```
+
+Run with `--no-skips` to build the skip-listed samples anyway (e.g. to re-check whether
+upstream fixed one). Removing an entry from `skips.json` lets a sample re-enter the matrix.
+
 ### Why a baseline instead of "all green"
 
 Hundreds of third-party extensions will never all build , many use bundler steps,

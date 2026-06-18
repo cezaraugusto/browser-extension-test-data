@@ -23,7 +23,7 @@
 //        --runtime  --concurrency n  --limit n
 import {spawn} from 'node:child_process'
 import os from 'node:os'
-import {ROOT, REPORTS_DIR, readJson, writeJson, pool, execAsync, exec, ensureDir, fs, path} from './lib/util.mjs'
+import {ROOT, REPORTS_DIR, readJson, writeJson, pool, execAsync, exec, ensureDir, loadSkips, fs, path} from './lib/util.mjs'
 import {resolveCli, cliArgs} from './lib/cli.mjs'
 import {checkManifestAssets} from './lib/integrity.mjs'
 
@@ -118,6 +118,13 @@ function selectTier(sample) {
 
 async function processSample(cli, sample) {
   const browsers = {}
+  // Sample-side / upstream failures are not Extension.js's fault: skip building
+  // them entirely so the framework pass-rate isn't polluted (reasons in skips.json).
+  const skip = SKIPS[sample.id]
+  if (skip && !has('no-skips')) {
+    for (const b of BROWSERS) browsers[b] = {status: 'skip', reason: skip.category}
+    return {id: sample.id, source: sample.source, tier: sample.tier, skipped: skip.category, browsers, runtime: null}
+  }
   let dir
   try {
     dir = stage(sample)
@@ -160,6 +167,7 @@ async function processSample(cli, sample) {
 }
 
 let RUNTIME_SET = new Set()
+const SKIPS = loadSkips()
 
 async function main() {
   fs.rmSync(WORK, {recursive: true, force: true})
