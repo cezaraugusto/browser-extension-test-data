@@ -35,25 +35,38 @@ EXTENSION_SKIP_INSTALL=1 npx -y extension@canary build --browser chrome --silent
 Keep filing in the same shape , the pristine-repro + exact-command + full-error + root-cause
 format made all four fast to triage. Next round welcome.
 
-## ▶ Still open , Bug 05 (theme images not emitted)
+## ▶ Still open on `canary.321.403955d` , Bugs 05 & 06 (action list)
 
-Found by the new asset-integrity check. **Correction to the Bug 03 note above:** on
-`3.18.4-canary.321.403955d`, single-string `theme_frame` images are **not** emitted
-either , not just the array case. Verified empirically: `themes/weta_fade`
-(`theme_frame: "weta.png"`) builds green (exit 0) but `dist/chrome/` contains only
-`manifest.json`; `theme/images/weta.png` is missing though the manifest references it.
+Two new framework bugs, both found by the testbed's **asset-integrity check** (build
+exits 0 but the emitted `manifest.json` references files that aren't in `dist/`). Each
+has a committed, pristine repro. Fixing both makes 6 more corpus samples ship correct
+output (5 themes + getting-started). Both are *silent* on an exit-code-only check , 5 of
+the 6 samples scored "green" on `3.18.4` while producing a broken bundle.
 
-- **[Bug 05 , theme images never emitted to `dist/`](05-theme-images-not-emitted-to-dist.md)**
-  (repro `repro/05-theme-images-not-emitted`). Affects **all 5 MDN themes** across every
-  `theme.images` shape (`theme_frame`, `additional_backgrounds` string + array); 4 of them
-  shipped a broken build "green" on `3.18.4`. **Fix:** emit each `theme.images.*` source
-  file to `dist/theme/images/`, then re-check repro 05 (`theme_frame`), repro 03 (array),
-  and `themes/weta_tiled` (string) , all three shapes must emit.
+1. **[Bug 05 , theme images never emitted to `dist/`](05-theme-images-not-emitted-to-dist.md)**
+   (repro `repro/05-theme-images-not-emitted`). **Correction to the Bug 03 note above:** on
+   `canary.321.403955d` single-string `theme_frame` is **not** emitted either, not just the
+   array case , verified: `themes/weta_fade` (`theme_frame: "weta.png"`) builds green but
+   `dist/chrome/` has only `manifest.json`. Affects **all 5 MDN themes** (`theme_frame`,
+   `additional_backgrounds` string + array). **Fix:** emit each `theme.images.*` source file
+   to `dist/theme/images/`; re-check repro 05 (`theme_frame`), repro 03 (array), `themes/weta_tiled` (string).
+
+2. **[Bug 06 , leading-slash icon paths mismatch](06-leading-slash-icon-path-mismatch.md)**
+   (repro `repro/06-leading-slash-icon-path-mismatch`). Manifest icons declared as
+   `"/images/get_started16.png"` (leading slash): files are emitted to `dist/chrome/icons/`
+   but the emitted manifest references `images/...` → points at nothing. **Fix:** normalise
+   leading-slash asset paths identically for the manifest rewrite and the file emission
+   (covers `icons`, `action.default_icon`).
 
 ```sh
-cp -R bug-reports/repro/05-theme-images-not-emitted /tmp/t && cd /tmp/t
+# verify each before/after:
+cp -R bug-reports/repro/05-theme-images-not-emitted /tmp/t05 && cd /tmp/t05
 EXTENSION_SKIP_INSTALL=1 npx -y extension@canary build --browser chrome --silent
-test -f dist/chrome/theme/images/weta.png && echo EMITTED || echo MISSING   # currently MISSING
+test -f dist/chrome/theme/images/weta.png && echo OK || echo "MISSING (bug 05)"
+
+cp -R bug-reports/repro/06-leading-slash-icon-path-mismatch /tmp/t06 && cd /tmp/t06
+EXTENSION_SKIP_INSTALL=1 npx -y extension@canary build --browser chrome --silent
+test -f "dist/chrome/$(node -e "process.stdout.write(require('./dist/chrome/manifest.json').icons['16'])")" && echo OK || echo "MISSING (bug 06)"
 ```
 
 ## Status , triaged & fixed (2026-06-18)
@@ -93,6 +106,7 @@ polyfill; with the genuine file it builds clean. Of the remaining 10, **6 are sa
 | 03 | [theme additional_backgrounds array crash](03-theme-additional-backgrounds-array.md) | `…/bug-reports/repro/03-theme-additional-backgrounds-array` |
 | 04 | [chrome-extension:// URL scheme passthrough](04-chrome-extension-url-scheme-passthrough.md) | `…/bug-reports/repro/04-chrome-extension-url-scheme-passthrough` |
 | 05 | [theme images not emitted to dist](05-theme-images-not-emitted-to-dist.md) | `…/bug-reports/repro/05-theme-images-not-emitted` |
+| 06 | [leading-slash icon path mismatch](06-leading-slash-icon-path-mismatch.md) | `…/bug-reports/repro/06-leading-slash-icon-path-mismatch` |
 
 Base path:
 `/Users/cezaraugusto/local/extension-land/cezaraugusto/packages/browser-extension-test-data/bug-reports`
