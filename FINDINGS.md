@@ -18,11 +18,18 @@ browser-specific. This is the baseline the weekly job gates against.
 Re-ran the 13 failures on `extension@3.18.4-canary.320.767e107` (Extension.js fixes for
 [bug 02](bug-reports/02-popup-top-level-await-not-treated-as-module.md) + vendored-min.js
 passthrough). Corpus moves **208 → 210 / 221**: `tutorial.tabs-manager` and
-`api-samples/sandbox` now build. Triage of the rest: 6 sample-side (pre-built `dist/`
-refs / missing sources), 3 missing-asset sample issues, 1 corrupt-upstream polyfill
-(`mocha-client-tests`, builds with the genuine file), and 1 **new framework bug**
-filed as [bug 03](bug-reports/03-theme-additional-backgrounds-array.md) (theme
-`additional_backgrounds` array crash , not fixed on canary). See `bug-reports/README.md`.
+`api-samples/sandbox` now build. Triage of the 11 still failing:
+
+- **2 new framework bugs** (still open on canary) → fixing them recovers 2 more, reaching 212/221:
+  [bug 03](bug-reports/03-theme-additional-backgrounds-array.md) (theme `additional_backgrounds`
+  array crash) and [bug 04](bug-reports/04-chrome-extension-url-scheme-passthrough.md)
+  (`chrome-extension://` URL not passed through in CSS).
+- **1 corrupt-upstream** polyfill (`mocha-client-tests` , builds with the genuine file).
+- **8 sample-side**: 4 reference pre-built `dist/` output (`store-collected-images`,
+  `webpack-modules`, `ai.gemini-in-the-cloud`, `libraries-xhr-in-sw`); 4 missing
+  source/asset files (`menu-demo`, `top-sites`, `fontSettings`, `sample.bookmarks`).
+
+See `bug-reports/README.md` → "Open for the next canary" for the action list.
 
 ## Failure taxonomy (13)
 
