@@ -2,7 +2,23 @@
 
 **CLI:** reproduced on `extension@3.18.4`, `…canary.320.767e107`, **and `…canary.321.403955d`**
 **Severity:** high , every theme produces a broken build; the manifest points at images that don't ship
-**Status:** reproducible, isolated, **open on the latest canary**
+**Status:** ✅ FIXED on branch `fix/page-script-tla-and-vendored-minjs-passthrough` , pending a fresh canary
+
+## Resolution (2026-06-18)
+
+This is the still-open part of the Bug 03 follow-up, and it was **already fixed on the
+branch** , `canary.321.403955d` just predates the emit commit (it was cut from `403955d`,
+and the emit landed in `f85c03f`).
+
+- **extension.js `f85c03f`:** the manifest-fields `theme` group is routed through the icon
+  emit path, so every `theme.images.*` source file is written to `dist/theme/images/`.
+- **`browser-extension-manifest-fields@2.2.5`:** `themeFields()` expands the
+  `additional_backgrounds` array into one entry per image (needed for the array shape).
+- **Validated locally** on this repro and the others: `theme_frame` (repro 05) →
+  `dist/chrome/theme/images/weta.png` ✓; `additional_backgrounds` array (repro 03) → both
+  images ✓; `additional_backgrounds` string (`weta_tiled`) ✓.
+
+Ships once the branch lands in a new canary.
 
 > Found by the testbed's asset-integrity check (`scripts/lib/integrity.mjs`): the build
 > exits 0, so an exit-code-only check scores it PASS , but the emitted `manifest.json`

@@ -35,31 +35,31 @@ EXTENSION_SKIP_INSTALL=1 npx -y extension@canary build --browser chrome --silent
 Keep filing in the same shape , the pristine-repro + exact-command + full-error + root-cause
 format made all four fast to triage. Next round welcome.
 
-## ▶ Still open on `canary.321.403955d` , Bugs 05 & 06 (action list)
+## ✅ Bugs 05 & 06 fixed (asset-integrity) , pending a fresh canary
 
-Two new framework bugs, both found by the testbed's **asset-integrity check** (build
-exits 0 but the emitted `manifest.json` references files that aren't in `dist/`). Each
-has a committed, pristine repro. Fixing both makes 6 more corpus samples ship correct
-output (5 themes + getting-started). Both are *silent* on an exit-code-only check , 5 of
-the 6 samples scored "green" on `3.18.4` while producing a broken bundle.
+Both asset-integrity bugs (build exits 0 but `manifest.json` references files not in
+`dist/`) are fixed on branch `fix/page-script-tla-and-vendored-minjs-passthrough`. They
+were *open on `canary.321.403955d`* only because that canary was cut from `403955d`,
+which predates the emit fixes. Validated locally against each pristine repro.
 
-1. **[Bug 05 , theme images never emitted to `dist/`](05-theme-images-not-emitted-to-dist.md)**
-   (repro `repro/05-theme-images-not-emitted`). **Correction to the Bug 03 note above:** on
-   `canary.321.403955d` single-string `theme_frame` is **not** emitted either, not just the
-   array case , verified: `themes/weta_fade` (`theme_frame: "weta.png"`) builds green but
-   `dist/chrome/` has only `manifest.json`. Affects **all 5 MDN themes** (`theme_frame`,
-   `additional_backgrounds` string + array). **Fix:** emit each `theme.images.*` source file
-   to `dist/theme/images/`; re-check repro 05 (`theme_frame`), repro 03 (array), `themes/weta_tiled` (string).
+1. **[Bug 05 , theme images never emitted](05-theme-images-not-emitted-to-dist.md) → FIXED.**
+   This is the Bug 03 follow-up: `f85c03f` routes the `theme` field group through the icon
+   emit path so `theme/images/*` files actually ship, and `browser-extension-manifest-fields@2.2.5`
+   expands the `additional_backgrounds` array. Verified all three shapes emit:
+   repro 05 `theme_frame` → `dist/chrome/theme/images/weta.png` ✓, repro 03 array → both
+   images ✓, `weta_tiled` string ✓. *(Was already fixed on the branch , canary.321 just
+   predates it.)*
+2. **[Bug 06 , leading-slash icon path mismatch](06-leading-slash-icon-path-mismatch.md) → FIXED**
+   (`7da5ffed`). The manifest override treated *any* leading slash as a `public/` asset
+   (kept `images/…`); the emitter relocates non-public icons to `icons/<basename>`. Narrowed
+   the public-root test to genuine `public/` paths so both agree , `icons`,
+   `action.default_icon`, `browser_action.theme_icons` now resolve. Verified: every icon in
+   repro 06 resolves to an emitted file; relative icons and genuine `public/` assets unchanged.
 
-2. **[Bug 06 , leading-slash icon paths mismatch](06-leading-slash-icon-path-mismatch.md)**
-   (repro `repro/06-leading-slash-icon-path-mismatch`). Manifest icons declared as
-   `"/images/get_started16.png"` (leading slash): files are emitted to `dist/chrome/icons/`
-   but the emitted manifest references `images/...` → points at nothing. **Fix:** normalise
-   leading-slash asset paths identically for the manifest rewrite and the file emission
-   (covers `icons`, `action.default_icon`).
+Both ship once these branch commits land in a new canary (none of them are in `canary.321`).
+Re-validate each repro after that with:
 
 ```sh
-# verify each before/after:
 cp -R bug-reports/repro/05-theme-images-not-emitted /tmp/t05 && cd /tmp/t05
 EXTENSION_SKIP_INSTALL=1 npx -y extension@canary build --browser chrome --silent
 test -f dist/chrome/theme/images/weta.png && echo OK || echo "MISSING (bug 05)"

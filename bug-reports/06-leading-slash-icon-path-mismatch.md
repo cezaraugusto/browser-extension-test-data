@@ -2,7 +2,26 @@
 
 **CLI:** reproduced on `extension@3.18.4` **and `…canary.321.403955d`**
 **Severity:** high , the packaged manifest references icon files that don't exist at that path; build is green
-**Status:** reproducible, isolated, **open on the latest canary**
+**Status:** ✅ FIXED , branch `fix/page-script-tla-and-vendored-minjs-passthrough`, commit `7da5ffed` (pending a fresh canary)
+
+## Resolution (2026-06-18)
+
+Confirmed and fixed exactly as suggested.
+
+- **Root cause:** the icon manifest overrides treated *any* leading-slash path as a
+  `public/` asset (`isPublic = /^(?:\/.+|…)/`) and kept its declared folder (`images/…`),
+  but the icon emitter relocates non-public icons to `icons/<basename>`. The two only agree
+  when the path is genuinely under `public/`.
+- **Fix:** narrowed the public-root test to real `public/` prefixes
+  (`/^(?:\/public\/|(?:\.\/)?public\/)/`), so a leading-slash extension-root icon now
+  rewrites to `icons/<basename>` , matching where the file lands. Applied to `icons`,
+  `action.default_icon`, `browser_action`/`page_action`/`sidebar_action.default_icon`, and
+  `browser_action.theme_icons`.
+- **Validated:** every icon + `action.default_icon` size in this repro resolves to an
+  emitted file; ordinary relative icons still go to `icons/`, and genuine `public/` assets
+  keep their extension-root path.
+
+Ships once the branch lands in a new canary.
 
 > Found by the testbed's asset-integrity check. Build exits 0, so exit-code-only scoring
 > marks it PASS , but the emitted manifest's icon paths don't match where the icons were
