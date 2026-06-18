@@ -19,13 +19,29 @@ Confirmed and fixed.
 - **Validate:** the committed repro builds clean (exit 0) on the canary above and
   the output manifest references `theme/images/weta.png` + `theme/images/weta-left.png`.
 
-> **Separate pre-existing gap (not this crash):** theme image *files* are never
-> copied to `dist/theme/images/` for *any* theme , single-string or array. The
-> `theme` field group is computed by `browser-extension-manifest-fields` but no
-> plugin consumes it into an emit/include list (and that package also skips array
-> values). So the manifest points at images that aren't emitted. This affects all
-> themes equally and is orthogonal to the crash; worth a dedicated report if you
-> want themes to actually render.
+### Follow-up: theme image emission (also fixed)
+
+A separate pre-existing gap surfaced while fixing the crash: theme image *files*
+were never copied to `dist/theme/images/` for *any* theme (single-string or
+array) , the `theme` field group was computed by `browser-extension-manifest-fields`
+but no plugin consumed it, **and** that package skipped array values. So the
+manifest referenced images that weren't emitted.
+
+Fixed in two parts:
+
+- **extension.js** (commit `f85c03f`): the `theme` group is routed through the
+  icon emit path and `theme/images/*` keys land in `dist/theme/images/`. This
+  fixes **single-string** theme images immediately.
+- **`browser-extension-manifest-fields` → 2.2.5** (committed in
+  `packages/browser-extension-manifest-fields`): `themeFields()` now expands
+  `additional_backgrounds` arrays into one entry per image. Needed for the
+  **array** case to emit.
+
+Validated locally end-to-end (with 2.2.5 linked in): the weta_mirror repro emits
+both `theme/images/weta.png` and `theme/images/weta-left.png`, matching the
+manifest. **Pending:** publish `browser-extension-manifest-fields@2.2.5`, then
+bump the extension.js dependency (`^2.2.3` → `^2.2.5`) and cut a new canary so
+the array case emits in CI too.
 
 ## Repro
 

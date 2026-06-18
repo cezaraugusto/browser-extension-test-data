@@ -13,10 +13,11 @@ commit `403955d`). The new canary `3.18.4-canary.321.403955d` carries all four f
 
 - **Bug 03 , theme `additional_backgrounds` array crash → FIXED.** The theme manifest
   override mapped `path.basename()` over each entry instead of passing the array straight
-  in. Repro now builds (exit 0). *Separate pre-existing note:* theme image **files** are
-  not emitted to `dist/theme/images/` for any theme (single-string or array) , the
-  manifest references them but the copy step is unwired. That's orthogonal to this crash
-  and affects all themes equally; flag as its own follow-up if you want themes to render.
+  in. Repro now builds (exit 0). *Follow-up also fixed:* theme image **files** are now
+  emitted to `dist/theme/images/` (the copy step was previously unwired for all themes).
+  Single-string themes emit on the current canary; the **array** case additionally needs
+  `browser-extension-manifest-fields@2.2.5` (committed, pending publish) + a dep bump and
+  a fresh canary. Validated end-to-end locally. See the report for details.
 - **Bug 04 , `chrome-extension://` CSS URL passthrough → FIXED.** `chrome-extension:` and
   `moz-extension:` requests are externalized as `asset`, so the `url()` (and the
   `__MSG_@@extension_id__` placeholder) survive verbatim. Ordinary relative/`https:` URLs
