@@ -5,6 +5,39 @@ Each report is self-contained: a committed, pristine repro under `repro/`, the e
 build command, full error output, and root-cause analysis. Hand the absolute path of
 a report to the Extension.js maintainer/AI.
 
+## 🟢 Validate all six on `extension@3.18.4-canary.322.7da5ffe`
+
+Fresh canary cut from branch `fix/page-script-tla-and-vendored-minjs-passthrough`
+(HEAD `7da5ffe`) , it carries **every** fix for Bugs 01-06 (the older
+`canary.320`/`canary.321` predate the theme-emission and icon-path commits).
+`extension@canary` also points at it.
+
+```sh
+cp -R bug-reports/repro/<name> /tmp/<name> && cd /tmp/<name>
+EXTENSION_SKIP_INSTALL=1 npx -y extension@3.18.4-canary.322.7da5ffe build --browser chrome --silent
+# …or track the channel
+EXTENSION_SKIP_INSTALL=1 npx -y extension@canary build --browser chrome --silent
+```
+
+Asset-integrity spot-checks (these are what the exit-code-only check missed):
+
+```sh
+# Bug 05 , theme images now emitted
+cp -R bug-reports/repro/05-theme-images-not-emitted /tmp/t05 && cd /tmp/t05
+EXTENSION_SKIP_INSTALL=1 npx -y extension@3.18.4-canary.322.7da5ffe build --browser chrome --silent
+test -f dist/chrome/theme/images/weta.png && echo "05 OK" || echo "05 MISSING"
+
+# Bug 06 , every manifest icon path resolves to an emitted file
+cp -R bug-reports/repro/06-leading-slash-icon-path-mismatch /tmp/t06 && cd /tmp/t06
+EXTENSION_SKIP_INSTALL=1 npx -y extension@3.18.4-canary.322.7da5ffe build --browser chrome --silent
+node -e "const m=require('./dist/chrome/manifest.json'),fs=require('fs');const bad=Object.values(m.icons).filter(p=>!fs.existsSync('dist/chrome/'+p));console.log(bad.length?'06 MISSING '+bad:'06 OK')"
+```
+
+> ⚠️ The pre-existing sections below were written for earlier canaries
+> (`canary.320`/`canary.321`). For the current state of every bug, use the
+> `canary.322.7da5ffe` checks above; the per-bug `.md` files have the up-to-date
+> resolution notes.
+
 ## ✅ All four fixed , validate on `extension@3.18.4-canary.321.403955d`
 
 Bugs 03 and 04 are now fixed too (branch `fix/page-script-tla-and-vendored-minjs-passthrough`,
