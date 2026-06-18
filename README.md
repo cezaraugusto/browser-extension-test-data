@@ -33,6 +33,14 @@ directory (outside this repo) before building , otherwise samples in one source
 would share an output dir and clobber each other, and a sample staged inside this
 package would wrongly resolve *this package* as its root. (Both were real bugs.)
 
+**Asset integrity.** Exit code 0 isn't enough , a build can succeed while silently
+dropping files the manifest declares. After every passing build, `run-matrix` reads the
+*emitted* `dist/<browser>/manifest.json` and asserts every local file it references
+(icons, theme images, content scripts, web-accessible resources, HTML entrypoints, …)
+actually exists in `dist/`; if not, the verdict becomes `fail:missing-assets`. This
+caught 5 themes whose images were never emitted (4 of them scored "green" by exit code
+alone , see `bug-reports/05-…`). Disable with `--no-integrity`.
+
 **Layout-aware discovery.** `sources.json` `layout` controls enumeration:
 `manifest-root` (MDN/Chrome , a sample is any dir directly holding `manifest.json`)
 vs `project-root` (Extension.js examples , each child of `scan` is a sample whose

@@ -25,6 +25,7 @@ import {spawn} from 'node:child_process'
 import os from 'node:os'
 import {ROOT, REPORTS_DIR, readJson, writeJson, pool, execAsync, exec, ensureDir, fs, path} from './lib/util.mjs'
 import {resolveCli, cliArgs} from './lib/cli.mjs'
+import {checkManifestAssets} from './lib/integrity.mjs'
 
 const argv = process.argv.slice(2)
 const flag = (n, d) => {
@@ -43,6 +44,7 @@ const BUILD_TIMEOUT = Number(process.env.QA_BUILD_TIMEOUT_MS || 180_000)
 const INSTALL_TIMEOUT = Number(process.env.QA_INSTALL_TIMEOUT_MS || 300_000)
 const DEV_TIMEOUT = Number(process.env.QA_DEV_TIMEOUT_MS || 60_000)
 const IS_MAC = os.platform() === 'darwin'
+const CHECK_INTEGRITY = !has('no-integrity')
 
 // Stage OUTSIDE the repo tree. Extension.js walks up from a sample to the nearest
 // project root (package.json/.git); staging inside this package would make it
@@ -75,7 +77,14 @@ async function build(cli, dir, browser, env) {
     env,
     timeoutMs: BUILD_TIMEOUT
   })
-  return {status: r.ok ? 'pass' : r.timedOut ? 'timeout' : 'fail', ms: r.ms, error: r.ok ? null : snippet(r.stderr || r.stdout)}
+  if (!r.ok) return {status: r.timedOut ? 'timeout' : 'fail', ms: r.ms, error: snippet(r.stderr || r.stdout)}
+  // Build exited 0: assert the emitted manifest's referenced files were all emitted.
+  // A green build that drops declared assets is a silent failure (see lib/integrity.mjs).
+  if (CHECK_INTEGRITY) {
+    const {ok, missing} = checkManifestAssets(path.join(dir, 'dist', browser))
+    if (!ok) return {status: 'fail', reason: 'missing-assets', ms: r.ms, error: `missing-assets: ${missing.join(', ')}`}
+  }
+  return {status: 'pass', ms: r.ms, error: null}
 }
 
 // Tier 2: boot dev, resolve when the CLI prints a ready marker, then kill.

@@ -35,6 +35,27 @@ EXTENSION_SKIP_INSTALL=1 npx -y extension@canary build --browser chrome --silent
 Keep filing in the same shape , the pristine-repro + exact-command + full-error + root-cause
 format made all four fast to triage. Next round welcome.
 
+## ▶ Still open , Bug 05 (theme images not emitted)
+
+Found by the new asset-integrity check. **Correction to the Bug 03 note above:** on
+`3.18.4-canary.321.403955d`, single-string `theme_frame` images are **not** emitted
+either , not just the array case. Verified empirically: `themes/weta_fade`
+(`theme_frame: "weta.png"`) builds green (exit 0) but `dist/chrome/` contains only
+`manifest.json`; `theme/images/weta.png` is missing though the manifest references it.
+
+- **[Bug 05 , theme images never emitted to `dist/`](05-theme-images-not-emitted-to-dist.md)**
+  (repro `repro/05-theme-images-not-emitted`). Affects **all 5 MDN themes** across every
+  `theme.images` shape (`theme_frame`, `additional_backgrounds` string + array); 4 of them
+  shipped a broken build "green" on `3.18.4`. **Fix:** emit each `theme.images.*` source
+  file to `dist/theme/images/`, then re-check repro 05 (`theme_frame`), repro 03 (array),
+  and `themes/weta_tiled` (string) , all three shapes must emit.
+
+```sh
+cp -R bug-reports/repro/05-theme-images-not-emitted /tmp/t && cd /tmp/t
+EXTENSION_SKIP_INSTALL=1 npx -y extension@canary build --browser chrome --silent
+test -f dist/chrome/theme/images/weta.png && echo EMITTED || echo MISSING   # currently MISSING
+```
+
 ## Status , triaged & fixed (2026-06-18)
 
 Both reports were investigated against Extension.js source. Fixes are on branch
@@ -71,6 +92,7 @@ polyfill; with the genuine file it builds clean. Of the remaining 10, **6 are sa
 | 02 | [popup top-level await not treated as module](02-popup-top-level-await-not-treated-as-module.md) | `…/bug-reports/repro/02-tutorial-tabs-manager` |
 | 03 | [theme additional_backgrounds array crash](03-theme-additional-backgrounds-array.md) | `…/bug-reports/repro/03-theme-additional-backgrounds-array` |
 | 04 | [chrome-extension:// URL scheme passthrough](04-chrome-extension-url-scheme-passthrough.md) | `…/bug-reports/repro/04-chrome-extension-url-scheme-passthrough` |
+| 05 | [theme images not emitted to dist](05-theme-images-not-emitted-to-dist.md) | `…/bug-reports/repro/05-theme-images-not-emitted` |
 
 Base path:
 `/Users/cezaraugusto/local/extension-land/cezaraugusto/packages/browser-extension-test-data/bug-reports`
