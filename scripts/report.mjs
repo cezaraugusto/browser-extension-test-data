@@ -75,7 +75,14 @@ function main() {
   writeJson(path.join(REPORTS_DIR, 'diff.json'), diff)
 
   if (args.includes('--update')) {
-    writeJson(BASELINE, {updatedAt: new Date().toISOString(), cli: latest.cli, samples: current})
+    writeJson(BASELINE, {
+      updatedAt: new Date().toISOString(),
+      cli: latest.cli,
+      cliVersion: latest.cliVersion,
+      platform: latest.platform,
+      browsers: latest.browsers,
+      samples: current
+    })
     console.log(`baseline.json updated with ${Object.keys(current).length} samples`)
   }
 
