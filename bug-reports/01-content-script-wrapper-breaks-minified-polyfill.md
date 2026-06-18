@@ -2,7 +2,43 @@
 
 **CLI:** `extension@3.18.4`
 **Severity:** medium , blocks any extension that vendors Mozilla's webextension-polyfill as a script
-**Status:** reproducible, isolated
+**Status:** ⚠️ FIXTURE INVALID + framework DX improved , re-validate on `extension@3.18.4-canary.320.767e107`
+
+## Resolution (2026-06-18)
+
+Two findings , the headline framing ("swc is too strict on the standard polyfill")
+did **not** hold, but there was a real adjacent framework problem that is now fixed.
+
+1. **The repro's polyfill is not valid JavaScript.**
+   `repro/01-mocha-client-tests-addon/scripts/browser-polyfill.min.js` is an
+   ~8 KB stub (the genuine Mozilla polyfill is ~50 KB). It contains
+   `const wrapEvent=(wrapperMap)=>{addListener(...){...}}` , the genuine file is
+   `=>({...})`. Object-method shorthand in an arrow **block** body is a syntax
+   error, and **Node's own parser rejects it** too:
+
+   ```sh
+   node --check scripts/browser-polyfill.min.js
+   # SyntaxError: Unexpected token '{'
+   ```
+
+   No bundler can parse genuinely invalid JS, so the build *correctly* fails.
+   → **Action:** replace this fixture with the real, unmodified
+   `browser-polyfill.min.js`. With a valid file the build succeeds on the canary.
+
+2. **Framework DX bug (fixed): vendored `*.min.js` was being wrapped.**
+   Extension.js applied the content-script reinjection wrapper to the vendored
+   file (it lives in `scripts/`), prepending ~500 lines of mount/reload runtime
+   and appending the `__EXTENSIONJS_REINJECT_GENERATION` epilogue to a
+   third-party file. That shifted line numbers and produced the misleading
+   "line 511 / line 514" diagnostic in the original report.
+   → **Fix:** vendored `*.min.js` now passes through untouched (unless it is an
+   explicitly declared `content_scripts` entry). The error now points honestly at
+   the real file/line (`browser-polyfill.min.js:18:1`) with no injected epilogue.
+   `programs/develop/plugin-web-extension/feature-scripts/steps/setup-reload-strategy/add-content-script-wrapper/content-script-wrapper.ts`
+   (branch `fix/page-script-tla-and-vendored-minjs-passthrough`, commit `767e107`).
+
+**Net:** not a parser-strictness bug. Swap in the genuine polyfill and re-run on
+the canary; if it still fails, that's a new (real) report worth filing.
 
 ## Repro
 
