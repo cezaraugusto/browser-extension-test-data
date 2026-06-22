@@ -1,8 +1,8 @@
-# Bug 04 , `chrome-extension://` URLs in CSS fail build (should pass through)
+# Bug 04: `chrome-extension://` URLs in CSS fail build (should pass through)
 
 **CLI:** reproduced on `extension@3.18.4` and `…canary.320.767e107`
-**Severity:** medium , blocks extensions that self-reference assets via `chrome-extension://__MSG_@@extension_id__/…`
-**Status:** ✅ FIXED , validate on `extension@3.18.4-canary.321.403955d`
+**Severity:** medium: blocks extensions that self-reference assets via `chrome-extension://__MSG_@@extension_id__/…`
+**Status:** ✅ FIXED: validate on `extension@3.18.4-canary.321.403955d`
 
 ## Resolution (2026-06-18)
 
@@ -23,7 +23,7 @@ Confirmed and fixed exactly as suggested.
 
 ## Repro
 
-Self-contained copy (build it directly , no install needed):
+Self-contained copy (build it directly, no install needed):
 
 ```
 /Users/cezaraugusto/local/extension-land/cezaraugusto/packages/browser-extension-test-data/bug-reports/repro/04-chrome-extension-url-scheme-passthrough
@@ -40,8 +40,8 @@ Upstream: `GoogleChrome/chrome-extensions-samples` → `functional-samples/tutor
 ## Observed
 
 `style.css` sets a custom cursor that self-references the extension's own images via
-the runtime `chrome-extension://__MSG_@@extension_id__/` URL (both images , `dino.png`,
-`dino-pointer.png` , are present in the sample):
+the runtime `chrome-extension://__MSG_@@extension_id__/` URL (both images, `dino.png`
+and `dino-pointer.png`, are present in the sample):
 
 ```css
 cursor:
@@ -74,7 +74,7 @@ string verbatim in the emitted CSS) the same way a browser does at runtime.
 ## Suggested direction for the Extension.js maintainer
 
 - Add `chrome-extension:` (and `moz-extension:`) to the set of schemes left
-  untouched by the CSS/asset loader , pass the `url()` through verbatim rather than
+  untouched by the CSS/asset loader: pass the `url()` through verbatim rather than
   attempting to read it as a module (alongside the existing `data:`/`file:` handling).
 - Preserve the `__MSG_@@extension_id__` placeholder unmodified so runtime i18n
   substitution still resolves it to the live extension ID.

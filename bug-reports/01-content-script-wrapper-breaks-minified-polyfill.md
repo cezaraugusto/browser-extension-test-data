@@ -1,18 +1,18 @@
-# Bug 01 , build fails on bundled `browser-polyfill.min.js` (swc Syntax Error)
+# Bug 01: build fails on bundled `browser-polyfill.min.js` (swc Syntax Error)
 
 **CLI:** `extension@3.18.4`
-**Severity:** medium , blocks any extension that vendors Mozilla's webextension-polyfill as a script
-**Status:** ⚠️ FIXTURE INVALID + framework DX improved , re-validate on `extension@3.18.4-canary.320.767e107`
+**Severity:** medium: blocks any extension that vendors Mozilla's webextension-polyfill as a script
+**Status:** ⚠️ FIXTURE INVALID + framework DX improved: re-validate on `extension@3.18.4-canary.320.767e107`
 
 ## Resolution (2026-06-18)
 
-Two findings , the headline framing ("swc is too strict on the standard polyfill")
+Two findings: the headline framing ("swc is too strict on the standard polyfill")
 did **not** hold, but there was a real adjacent framework problem that is now fixed.
 
 1. **The repro's polyfill is not valid JavaScript.**
    `repro/01-mocha-client-tests-addon/scripts/browser-polyfill.min.js` is an
    ~8 KB stub (the genuine Mozilla polyfill is ~50 KB). It contains
-   `const wrapEvent=(wrapperMap)=>{addListener(...){...}}` , the genuine file is
+   `const wrapEvent=(wrapperMap)=>{addListener(...){...}}`, the genuine file is
    `=>({...})`. Object-method shorthand in an arrow **block** body is a syntax
    error, and **Node's own parser rejects it** too:
 
@@ -44,13 +44,13 @@ the canary; if it still fails, that's a new (real) report worth filing.
 
 Fixture replaced with genuine `webextension-polyfill@0.12.0` `dist/browser-polyfill.min.js`
 (10 KB minified, `node --check` clean; the unminified source is 38 KB). On
-`extension@3.18.4-canary.320.767e107` the repro now **builds clean , exit 0**. The
+`extension@3.18.4-canary.320.767e107` the repro now **builds clean, exit 0**. The
 original 8 KB fixture is what upstream MDN commits and is itself invalid JS (a
 separate upstream-MDN issue); the genuine file confirms the framework handles it.
 
 ## Repro
 
-Self-contained copy (build it directly , no install needed):
+Self-contained copy (build it directly, no install needed):
 
 ```
 /Users/cezaraugusto/local/extension-land/cezaraugusto/packages/browser-extension-test-data/bug-reports/repro/01-mocha-client-tests-addon

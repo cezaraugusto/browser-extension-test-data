@@ -1,8 +1,8 @@
-# Bug 03 , theme build crashes on `additional_backgrounds` array (path.basename on Array)
+# Bug 03: theme build crashes on `additional_backgrounds` array (path.basename on Array)
 
 **CLI:** reproduced on `extension@3.18.4` and `…canary.320.767e107`
-**Severity:** medium , blocks any theme that declares more than one background image
-**Status:** ✅ FIXED , validate on `extension@3.18.4-canary.321.403955d`
+**Severity:** medium: blocks any theme that declares more than one background image
+**Status:** ✅ FIXED: validate on `extension@3.18.4-canary.321.403955d`
 
 ## Resolution (2026-06-18)
 
@@ -23,7 +23,7 @@ Confirmed and fixed.
 
 A separate pre-existing gap surfaced while fixing the crash: theme image *files*
 were never copied to `dist/theme/images/` for *any* theme (single-string or
-array) , the `theme` field group was computed by `browser-extension-manifest-fields`
+array); the `theme` field group was computed by `browser-extension-manifest-fields`
 but no plugin consumed it, **and** that package skipped array values. So the
 manifest referenced images that weren't emitted.
 
@@ -46,14 +46,14 @@ the array case emits in CI too.
 > **⚠️ Confirmed still open on `3.18.4-canary.321.403955d`.** The crash is fixed
 > (build exits 0) and the output manifest references
 > `additional_backgrounds: ["theme/images/weta.png","theme/images/weta-left.png"]`,
-> but **neither image file is emitted** to `dist/chrome/theme/images/` , the built
+> but **neither image file is emitted** to `dist/chrome/theme/images/`; the built
 > theme references assets that don't exist. So the array case needs the `2.2.5`
 > publish + dep bump + a fresh canary before it is truly done. (The build-exit-0
 > verdict hides this; see the asset-integrity note in `../FINDINGS.md`.)
 
 ## Repro
 
-Self-contained copy (build it directly , no install needed):
+Self-contained copy (build it directly, no install needed):
 
 ```
 /Users/cezaraugusto/local/extension-land/cezaraugusto/packages/browser-extension-test-data/bug-reports/repro/03-theme-additional-backgrounds-array
@@ -99,12 +99,12 @@ ERROR Build failed.
 
 `theme.images.additional_backgrounds` is, per the WebExtensions spec, an **array of
 image paths** (a theme can layer multiple backgrounds). Extension.js's theme handler
-passes that value straight to `path.basename()`, which only accepts a string , so it
+passes that value straight to `path.basename()`, which only accepts a string, so it
 throws on any theme with multiple backgrounds. The assets exist; this is purely a
 type-handling bug in `theme_getBasename` / `theme()`.
 
 Note the surrounding code already iterates (`Array.map` at `:829`), so the value is
-expected to be array-shaped downstream , the `basename` call just isn't mapped over
+expected to be array-shaped downstream; the `basename` call just isn't mapped over
 the array.
 
 ## Suggested direction for the Extension.js maintainer
@@ -117,4 +117,4 @@ e.g. `(Array.isArray(v) ? v : [v]).map((p) => path.basename(p))`. A single-strin
 ## Validation
 
 - `3.18.4` → fail · `3.18.4-canary.320.767e107` → fail (exit 1 from the committed repro).
-- Single-background themes build fine , only the array form triggers it.
+- Single-background themes build fine; only the array form triggers it.

@@ -1,13 +1,13 @@
-# Bug 05 , theme images never emitted to `dist/` (build is green, output is broken)
+# Bug 05: theme images never emitted to `dist/` (build is green, output is broken)
 
 **CLI:** reproduced on `extension@3.18.4`, `…canary.320.767e107`, **and `…canary.321.403955d`**
-**Severity:** high , every theme produces a broken build; the manifest points at images that don't ship
-**Status:** ✅ FIXED on branch `fix/page-script-tla-and-vendored-minjs-passthrough` , pending a fresh canary
+**Severity:** high: every theme produces a broken build; the manifest points at images that don't ship
+**Status:** ✅ FIXED on branch `fix/page-script-tla-and-vendored-minjs-passthrough`: pending a fresh canary
 
 ## Resolution (2026-06-18)
 
 This is the still-open part of the Bug 03 follow-up, and it was **already fixed on the
-branch** , `canary.321.403955d` just predates the emit commit (it was cut from `403955d`,
+branch**; `canary.321.403955d` just predates the emit commit (it was cut from `403955d`,
 and the emit landed in `f85c03f`).
 
 - **extension.js `f85c03f`:** the manifest-fields `theme` group is routed through the icon
@@ -21,14 +21,14 @@ and the emit landed in `f85c03f`).
 Ships once the branch lands in a new canary.
 
 > Found by the testbed's asset-integrity check (`scripts/lib/integrity.mjs`): the build
-> exits 0, so an exit-code-only check scores it PASS , but the emitted `manifest.json`
+> exits 0, so an exit-code-only check scores it PASS, but the emitted `manifest.json`
 > references `theme/images/*.png` files that were never written to `dist/`. This is the
 > broader, still-open part of [Bug 03](03-theme-additional-backgrounds-array.md) (whose
 > crash is fixed): it affects **single-string `theme_frame` too**, not just arrays.
 
 ## Repro
 
-Self-contained copy (single-string `theme_frame` , the simplest case):
+Self-contained copy (single-string `theme_frame`, the simplest case):
 
 ```
 /Users/cezaraugusto/local/extension-land/cezaraugusto/packages/browser-extension-test-data/bug-reports/repro/05-theme-images-not-emitted
@@ -58,10 +58,10 @@ Build exits 0. The **emitted** manifest rewrites the path:
 "theme": { "images": { "theme_frame": "theme/images/weta.png" } }
 ```
 
-…but `dist/chrome/` contains **only `manifest.json`** , `theme/images/weta.png` is never
+…but `dist/chrome/` contains **only `manifest.json`**; `theme/images/weta.png` is never
 written. The packaged theme references an image that doesn't exist.
 
-## Scope , all 5 MDN themes affected
+## Scope: all 5 MDN themes affected
 
 | sample | `theme.images` | 3.18.4 build | image emitted? |
 |--------|----------------|--------------|----------------|
@@ -71,28 +71,28 @@ written. The packaged theme references an image that doesn't exist.
 | `themes/weta_tiled` | `additional_backgrounds: "weta_for_tiling.png"` (string) | green | ✗ |
 | `themes/weta_mirror` | `additional_backgrounds: ["weta.png","weta-left.png"]` (array) | crash (Bug 03) | ✗ |
 
-4 of the 5 built **green on `3.18.4`** while shipping a broken theme , the failure was
+4 of the 5 built **green on `3.18.4`** while shipping a broken theme; the failure was
 invisible to an exit-code check until the integrity assertion was added.
 
 ## Analysis
 
 The theme manifest override rewrites `theme.images.*` paths to `theme/images/<file>`,
 but no emit/copy step writes those source images into `dist/`. Applies to every
-`theme.images` key , `theme_frame` and `additional_backgrounds` (string and array).
+`theme.images` key: `theme_frame` and `additional_backgrounds` (string and array).
 
 This matches the Bug 03 follow-up note (extension.js `f85c03f` +
 `browser-extension-manifest-fields@2.2.5`), but empirically **single-string
-`theme_frame` is still not emitted on `canary.321.403955d`** , so the emit fix either
+`theme_frame` is still not emitted on `canary.321.403955d`**, so the emit fix either
 doesn't cover `theme_frame` or isn't in this canary.
 
 ## Suggested direction for the Extension.js maintainer
 
 - Wire a copy/emit step that writes every `theme.images.*` source file to
-  `dist/theme/images/` , covering `theme_frame`, `theme_frame_inactive`,
+  `dist/theme/images/`, covering `theme_frame`, `theme_frame_inactive`,
   `additional_backgrounds` (string **and** array), and the `*_overlay`/`theme_ntp_*`
-  keys , so the emitted file matches the rewritten manifest path.
+  keys, so the emitted file matches the rewritten manifest path.
 - Re-run repro 05 (`theme_frame`), repro 03 (`additional_backgrounds` array), and
-  `themes/weta_tiled` (`additional_backgrounds` string) , all three shapes must emit.
+  `themes/weta_tiled` (`additional_backgrounds` string): all three shapes must emit.
 
 ## Validation
 
