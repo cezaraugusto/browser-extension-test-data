@@ -2,10 +2,10 @@
 
 > Automated QA testbed. Fetches real-world browser-extension samples from their
 > upstream repositories every week and verifies that [Extension.js](https://github.com/extension-js/extension.js)
-> can build and run them , the same way it builds the first-party examples.
+> can build and run them, the same way it builds the first-party examples.
 
 The headline question this answers: **can the published Extension.js CLI take an
-extension it did not author , straight from MDN, Chrome, Chromium, Edge, Opera ,
+extension it did not author (straight from MDN, Chrome, Chromium, Edge, Opera)
 and build it unchanged?** Regressions in that answer are caught automatically.
 
 ## How it works
@@ -19,7 +19,7 @@ sources.json ──▶ sync ──▶ discover ──▶ run-matrix ──▶ re
 
 | Stage | Script | What it does |
 |-------|--------|--------------|
-| **sync** | `scripts/sync.mjs` | For each enabled source, `git ls-remote` the latest SHA, shallow-clone into `.cache/<id>` (gitignored , never vendored), pin the tested SHA in `sources.lock.json`, and report which sources changed since last run. |
+| **sync** | `scripts/sync.mjs` | For each enabled source, `git ls-remote` the latest SHA, shallow-clone into `.cache/<id>` (gitignored, never vendored), pin the tested SHA in `sources.lock.json`, and report which sources changed since last run. |
 | **discover** | `scripts/discover.mjs` | Enumerate samples per source `layout` (see below), classify each (manifest version incl. vendor-prefixed keys, `chrome.*` vs `browser.*`, entrypoints, `raw` vs `install` tier). → `reports/samples.json`. |
 | **run-matrix** | `scripts/run-matrix.mjs` | Stage each sample into an isolated temp dir, then `extension build --browser <b>` per target browser; record `pass`/`fail`/`timeout`/`skip` and the resolved CLI version. → `reports/latest.json`. |
 | **report** | `scripts/report.mjs` | Diff `latest.json` against `baseline.json`. Exits non-zero (CI red) **only on regressions**. → `reports/diff.json` + `reports/REPORT.md`. |
@@ -29,21 +29,21 @@ sources.json ──▶ sync ──▶ discover ──▶ run-matrix ──▶ re
 **Isolated staging.** Extension.js resolves the project root by walking *up* from a
 sample to the nearest `package.json`/`.git`, and writes `dist/` + installs deps
 there. So the matrix copies every sample into its own dir under the OS temp
-directory (outside this repo) before building , otherwise samples in one source
+directory (outside this repo) before building; otherwise samples in one source
 would share an output dir and clobber each other, and a sample staged inside this
 package would wrongly resolve *this package* as its root. (Both were real bugs.)
 
-**Asset integrity.** Exit code 0 isn't enough , a build can succeed while silently
+**Asset integrity.** Exit code 0 isn't enough; a build can succeed while silently
 dropping files the manifest declares. After every passing build, `run-matrix` reads the
 *emitted* `dist/<browser>/manifest.json` and asserts every local file it references
 (icons, theme images, content scripts, web-accessible resources, HTML entrypoints, …)
 actually exists in `dist/`; if not, the verdict becomes `fail:missing-assets`. This
 caught 5 themes whose images were never emitted (4 of them scored "green" by exit code
-alone , see `bug-reports/05-…`). Disable with `--no-integrity`.
+alone, see `bug-reports/05-…`). Disable with `--no-integrity`.
 
 **Layout-aware discovery.** `sources.json` `layout` controls enumeration:
-`manifest-root` (MDN/Chrome , a sample is any dir directly holding `manifest.json`)
-vs `project-root` (Extension.js examples , each child of `scan` is a sample whose
+`manifest-root` (MDN/Chrome: a sample is any dir directly holding `manifest.json`)
+vs `project-root` (Extension.js examples: each child of `scan` is a sample whose
 manifest lives at `src/manifest.json`; building from `src/` instead of the project
 root strips the loader config and produces phantom failures).
 
@@ -61,7 +61,7 @@ Not every failure is Extension.js's fault: some samples reference their own pre-
 `dist/` output, ship CSS pointing at absent assets, or (in one case) commit invalid JS
 upstream. Those live in `skips.json` with a category + hand-verified reason. The matrix
 records them as `skip` (doesn't build them), and the report excludes them so the headline
-number , **framework health** , answers exactly one question: *of the samples Extension.js
+number (**framework health**) answers exactly one question: *of the samples Extension.js
 is responsible for, how many build correctly?* A non-skipped failure is a real product
 defect; a skipped one is the sample's. `report` prints e.g.
 
@@ -75,13 +75,13 @@ upstream fixed one). Removing an entry from `skips.json` lets a sample re-enter 
 
 ### Why a baseline instead of "all green"
 
-Hundreds of third-party extensions will never all build , many use bundler steps,
+Hundreds of third-party extensions will never all build; many use bundler steps,
 native-messaging hosts, or conventions Extension.js doesn't (yet) support. So we
 don't gate on green. We gate on **change**:
 
-- **regression** , built last week, fails now → CI red, issue opened.
-- **progression** , failed last week, builds now → Extension.js improved.
-- **new / removed** , upstream added/deleted a sample → triage and re-baseline.
+- **regression**: built last week, fails now → CI red, issue opened.
+- **progression**: failed last week, builds now → Extension.js improved.
+- **new / removed**: upstream added/deleted a sample → triage and re-baseline.
 
 `baseline.json` is the accepted state. After reviewing a run, run
 `npm run baseline:update` to record current verdicts.
@@ -106,7 +106,7 @@ node scripts/run-matrix.mjs --limit 20        # cap sample count
 ```
 
 Targets: `chrome`, `firefox`, `edge` (Chromium/Gecko, run on Linux). `safari`
-builds via Xcode and runs only on macOS , elsewhere it records `skip:non-macos`.
+builds via Xcode and runs only on macOS; elsewhere it records `skip:non-macos`.
 The weekly workflow runs a gating Linux lane (chrome/firefox/edge → `baseline.json`)
 and a non-gating macOS lane (adds safari → `baseline.safari.json`).
 
@@ -116,13 +116,13 @@ Resolved in `scripts/lib/cli.mjs`, mirroring the first-party examples repo:
 
 | Env | Effect |
 |-----|--------|
-| _(none)_ | `npx -y extension@latest` , what users get (cron default). |
+| _(none)_ | `npx -y extension@latest` (what users get, cron default). |
 | `EXTENSION_TAG=canary` | test the next release before publish. |
 | `EXTENSION_CLI_PATH=/abs/cli.cjs` | test an unreleased local build. |
 
 ## Adding a source
 
-Append to `sources.json` , no code changes:
+Append to `sources.json`, no code changes:
 
 ```json
 {
@@ -140,7 +140,7 @@ Append to `sources.json` , no code changes:
 `scan` lists directories to search (each top-most `manifest.json` = one sample);
 `ignore` prunes the walk. Set `enabled: false` to register a candidate without
 running it. Edge/Opera/Chromium ship disabled with notes until their upstream
-URLs are confirmed (Chromium needs a sparse-checkout strategy , see its note).
+URLs are confirmed (Chromium needs a sparse-checkout strategy; see its note).
 
 ## Automation
 
@@ -152,7 +152,7 @@ and opens a `qa-regression` issue (body = `REPORT.md`) if anything regressed.
 
 The top-level `chrome/`, `chromium/`, `mdn/`, `extension-create/` directories are
 the **old 2023 vendored snapshot**. They're kept only until the automated fetch is
-trusted, then should be removed , the `.cache/` clones supersede them entirely.
+trusted, then should be removed; the `.cache/` clones supersede them entirely.
 
 ## License
 
