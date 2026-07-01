@@ -1,0 +1,40 @@
+name: Smoke
+
+# Fast clean/not-clean check on every push/PR that touches the testbed, so the
+# badge and the Actions status reflect the current code — not just the weekly
+# full-corpus run. Builds a small raw slice (no installs) against extension@latest.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'sources.json'
+      - 'skips.json'
+      - '.github/workflows/smoke.yml'
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - 'sources.json'
+      - 'skips.json'
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      QA_CONCURRENCY: '6'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node scripts/sync.mjs
+      - run: node scripts/discover.mjs
+      # Fast slice: 12 raw samples × chrome,firefox (no installs).
+      - run: node scripts/run-matrix.mjs --tier raw --browsers chrome,firefox --limit 12
+      - run: node scripts/report.mjs --no-baseline
+      # Framework-health verdict on the slice → job summary + pass/fail gate.
+      - run: node scripts/status.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: {name: smoke-report, path: reports/}

@@ -72,7 +72,9 @@ function isPass(key) {
 
 function main() {
   const latest = readJson(path.join(REPORTS_DIR, 'latest.json'))
-  const baseline = readJson(BASELINE, {samples: {}})
+  // --no-baseline: report framework health on whatever ran (e.g. a push smoke
+  // subset) without diffing a full-corpus baseline — avoids spurious skew/removed.
+  const baseline = args.includes('--no-baseline') ? {samples: {}} : readJson(BASELINE, {samples: {}})
   const base = baseline.samples || {}
 
   // Skip-listed samples are forced to 'skip' regardless of how the run recorded
