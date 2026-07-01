@@ -137,7 +137,14 @@ async function processSample(cli, sample) {
   let installFailed = null
   if (sample.tier === 'install') {
     if (DO_INSTALL) {
-      const r = await execAsync('npm', ['install', '--no-audit', '--no-fund', '--prefer-offline'], {cwd: dir, env, timeoutMs: INSTALL_TIMEOUT})
+      // NB: no --prefer-offline — it resolves against stale cached registry
+      // metadata and spuriously ETARGETs on just-published transitive deps.
+      // Retry once to absorb transient registry/network blips (flaky-install guard).
+      let r
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        r = await execAsync('npm', ['install', '--no-audit', '--no-fund'], {cwd: dir, env, timeoutMs: INSTALL_TIMEOUT})
+        if (r.ok) break
+      }
       if (!r.ok) installFailed = snippet(r.stderr || r.stdout)
     } else {
       env.EXTENSION_SKIP_INSTALL = '1'
