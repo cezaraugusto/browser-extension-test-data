@@ -37,18 +37,33 @@ jobs:
       # One pass over the whole corpus: install-tier samples get `npm install`,
       # raw samples build as-is. Produces a single complete report.
       - run: node scripts/run-matrix.mjs --tier all --install --browsers chrome,firefox,edge
-      - id: report
+      # report writes diff.json + REPORT.md. It suppresses regressions when the
+      # scoring criteria changed since the baseline (re-baseline, not a regression).
+      # Don't gate here — a raw pass→fail may still be a flake.
+      - name: Report
         run: node scripts/report.mjs --markdown
+        continue-on-error: true
+      # The real gate: re-run only the regressing samples; a regression that
+      # clears on re-run was flaky infra and is dropped. Exits non-zero only on
+      # CONFIRMED regressions — that's the sole trigger for a weekly issue.
+      - id: confirm
+        run: node scripts/confirm-regressions.mjs
       - if: always()
         uses: actions/upload-artifact@v4
         with: {name: qa-report-linux, path: reports/}
-      - name: Open issue on regression
-        if: failure()
+      - name: Open issue on confirmed regression
+        if: failure() && steps.confirm.outcome == 'failure'
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const body = fs.readFileSync('reports/REPORT.md', 'utf8');
+            let body = fs.readFileSync('reports/REPORT.md', 'utf8');
+            try {
+              const c = JSON.parse(fs.readFileSync('reports/confirmed-regressions.json', 'utf8'));
+              body += `\n\n## Confirmed regressions (survived re-run)\n` +
+                c.confirmed.map((id) => `- \`${id}\``).join('\n') +
+                (c.cleared.length ? `\n\n_Cleared as flaky: ${c.cleared.map((x) => x.id).join(', ')}_` : '');
+            } catch {}
             await github.rest.issues.create({
               owner: context.repo.owner, repo: context.repo.repo,
               title: `Weekly QA regression (linux): ${new Date().toISOString().slice(0,10)}`,

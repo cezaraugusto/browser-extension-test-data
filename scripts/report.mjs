@@ -11,9 +11,25 @@
 // Flags:
 //   --update    overwrite baseline.json with current verdicts (accept state)
 //   --markdown  write reports/REPORT.md (for the weekly issue body)
+import crypto from 'node:crypto'
 import {ROOT, REPORTS_DIR, readJson, writeJson, loadSkips, fs, path} from './lib/util.mjs'
 
 const SKIPS = loadSkips()
+
+// A baseline is only comparable to a run scored under the SAME rules. This
+// fingerprints the scoring criteria (integrity on/off, target browsers, skip
+// list); if it changes, a pass→fail is the harness getting stricter, not the
+// product regressing — so we require a re-baseline instead of firing a false
+// regression (this is what produced the issue-#2 false alarms).
+function criteriaFingerprint(latest) {
+  const criteria = {
+    integrity: latest.integrity !== false,
+    browsers: [...(latest.browsers || [])].sort(),
+    skips: Object.keys(SKIPS).sort()
+  }
+  const hash = crypto.createHash('sha1').update(JSON.stringify(criteria)).digest('hex').slice(0, 12)
+  return {hash, ...criteria}
+}
 
 const args = process.argv.slice(2)
 const baselineArg = (() => {
@@ -83,12 +99,25 @@ function main() {
 
   const framework = frameworkHealth(latest.results)
 
+  // Criteria-skew guard: if the baseline was recorded under different scoring
+  // rules, its pass/fail verdicts aren't comparable — suppress regressions and
+  // ask for a re-baseline rather than paging on a stricter check.
+  const criteria = criteriaFingerprint(latest)
+  const criteriaSkew = base && baseline.criteria && baseline.criteria.hash !== criteria.hash
+  if (criteriaSkew) {
+    regressions.length = 0
+    progressions.length = 0
+  }
+
   const diff = {
     generatedAt: new Date().toISOString(),
     cli: latest.cli,
     cliVersion: latest.cliVersion,
     platform: latest.platform,
     tier: latest.tier,
+    criteria,
+    criteriaSkew: Boolean(criteriaSkew),
+    baselineCriteria: baseline.criteria || null,
     totals: latest.totals,
     framework,
     regressions,
@@ -105,13 +134,20 @@ function main() {
       cliVersion: latest.cliVersion,
       platform: latest.platform,
       browsers: latest.browsers,
+      criteria, // scoring-rules fingerprint — future runs compare against this
       samples: current
     })
-    console.log(`baseline.json updated with ${Object.keys(current).length} samples`)
+    console.log(`baseline.json updated with ${Object.keys(current).length} samples (criteria ${criteria.hash})`)
   }
 
   if (args.includes('--markdown')) fs.writeFileSync(path.join(REPORTS_DIR, 'REPORT.md'), markdown(diff))
 
+  if (criteriaSkew) {
+    console.log(
+      `⚠️  Criteria changed since baseline (baseline ${baseline.criteria.hash} → run ${criteria.hash}). ` +
+        `Regression check suppressed — run "npm run baseline:update" to re-baseline under the new rules.`
+    )
+  }
   console.log(
     `Regressions: ${regressions.length}  Progressions: ${progressions.length}  New: ${added.length}  Removed: ${removed.length}`
   )
@@ -138,8 +174,9 @@ function markdown(d) {
   return `# Browser Extension Test Data: Weekly QA
 
 **CLI under test:** \`${d.cli}\` (resolved \`${d.cliVersion}\`)
-**Platform:** ${d.platform} · **Tier:** ${d.tier}
+**Platform:** ${d.platform} · **Tier:** ${d.tier} · **Criteria:** \`${d.criteria.hash}\`
 **Run:** ${d.generatedAt}
+${d.criteriaSkew ? `\n> ⚠️ **Criteria changed since baseline** (\`${d.baselineCriteria && d.baselineCriteria.hash}\` → \`${d.criteria.hash}\`). Regression check suppressed — re-baseline required, not a product regression.\n` : ''}
 
 ## Framework health
 **${d.framework.pass}/${d.framework.attempted}** buildable samples pass (**${((d.framework.pass / d.framework.attempted) * 100).toFixed(1)}%**) · ${d.framework.skipped} skipped (sample-side/upstream) · **${d.framework.failures.length} framework failures**

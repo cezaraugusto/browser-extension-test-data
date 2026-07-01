@@ -36,6 +36,8 @@ const has = (n) => argv.includes(`--${n}`)
 
 const BROWSERS = flag('browsers', 'chrome,firefox,edge').split(',')
 const ONLY_SOURCE = flag('source', null)
+const ONLY_IDS = flag('only', null) // comma-separated sample ids (for confirm re-runs)
+const OUT = flag('out', null) // write report here instead of latest.json (confirm re-runs)
 const TIER = flag('tier', 'raw') // raw | install | all
 const DO_INSTALL = has('install') || TIER === 'install'
 const CONCURRENCY = Number(flag('concurrency', process.env.QA_CONCURRENCY || 4))
@@ -180,7 +182,11 @@ async function main() {
   fs.rmSync(WORK, {recursive: true, force: true})
   ensureDir(WORK)
   const cli = resolveCli()
-  let work = readJson(path.join(REPORTS_DIR, 'samples.json')).samples.filter((s) => s.valid && selectTier(s))
+  // --only bypasses the tier filter so a confirm re-run can target any id directly.
+  const onlySet = ONLY_IDS ? new Set(ONLY_IDS.split(',').map((s) => s.trim())) : null
+  let work = readJson(path.join(REPORTS_DIR, 'samples.json')).samples.filter(
+    (s) => s.valid && (onlySet ? onlySet.has(s.id) : selectTier(s))
+  )
   if (ONLY_SOURCE) work = work.filter((s) => s.source === ONLY_SOURCE)
   if (LIMIT > 0) work = work.slice(0, LIMIT)
   RUNTIME_SET = new Set(has('runtime') ? readJson(path.join(ROOT, 'runtime.json'), {samples: []}).samples : [])
@@ -204,13 +210,19 @@ async function main() {
     platform: os.platform(),
     tier: TIER,
     browsers: BROWSERS,
+    integrity: CHECK_INTEGRITY, // recorded so report.mjs can fingerprint scoring criteria
     totals: summarize(results, effectiveBrowsers),
     results
   }
   ensureDir(REPORTS_DIR)
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
-  writeJson(path.join(REPORTS_DIR, `matrix-${stamp}.json`), report)
-  writeJson(path.join(REPORTS_DIR, 'latest.json'), report)
+  if (OUT) {
+    // Targeted confirm re-run: write only to the requested path, don't clobber latest.json.
+    writeJson(path.isAbsolute(OUT) ? OUT : path.join(ROOT, OUT), report)
+  } else {
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+    writeJson(path.join(REPORTS_DIR, `matrix-${stamp}.json`), report)
+    writeJson(path.join(REPORTS_DIR, 'latest.json'), report)
+  }
   fs.rmSync(WORK, {recursive: true, force: true})
   console.log(`\n${JSON.stringify(report.totals, null, 2)}`)
 }

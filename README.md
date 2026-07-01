@@ -86,6 +86,26 @@ don't gate on green. We gate on **change**:
 `baseline.json` is the accepted state. After reviewing a run, run
 `npm run baseline:update` to record current verdicts.
 
+### Guarding against false regressions
+
+Two guards keep the weekly gate from paging on non-regressions:
+
+**Criteria fingerprint (baseline/harness skew).** A baseline is only comparable to a
+run scored under the same rules. `baseline.json` stores a `criteria` hash of the
+scoring inputs (integrity on/off, target browsers, skip list). If a run's criteria
+differ — e.g. a new check makes things stricter — `report` **suppresses regressions**
+and prints *"criteria changed — re-baseline required"* (exits 0) instead of firing a red
+alarm. This is what caused the early false-regression issue: the integrity check was
+added but the baseline predated it, so `pass → fail` read as a regression when the
+product hadn't changed.
+
+**Confirm-before-alert (flaky infra).** Before the weekly job opens an issue,
+`scripts/confirm-regressions.mjs` re-runs *only* the regressing samples (up to
+`QA_CONFIRM_ATTEMPTS`, default 2). Any that clear on re-run were transient
+infrastructure (npm/registry/network) and are dropped; the issue opens only on
+regressions that survive every re-run. The workflow gates on this step, not on the
+raw report.
+
 ## Usage
 
 ```sh

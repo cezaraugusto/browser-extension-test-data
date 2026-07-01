@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-01T18:11:54.694Z",
+  "updatedAt": "2026-07-01T19:09:08.571Z",
   "cli": "extension@4.0.3",
   "cliVersion": "4.0.3",
   "platform": "darwin",
@@ -8,6 +8,26 @@
     "firefox",
     "edge"
   ],
+  "criteria": {
+    "hash": "e394f331798b",
+    "integrity": true,
+    "browsers": [
+      "chrome",
+      "edge",
+      "firefox"
+    ],
+    "skips": [
+      "chrome/api-samples/fontSettings/fontSettings Advanced",
+      "chrome/functional-samples/ai.gemini-in-the-cloud",
+      "chrome/functional-samples/libraries-xhr-in-sw",
+      "chrome/functional-samples/sample.bookmarks",
+      "mdn/menu-demo",
+      "mdn/mocha-client-tests/addon",
+      "mdn/store-collected-images/webextension-with-webpack/extension",
+      "mdn/top-sites",
+      "mdn/webpack-modules/addon"
+    ]
+  },
   "samples": {
     "mdn/annotate-page": "chrome=pass,edge=pass,firefox=pass",
     "mdn/apply-css": "chrome=pass,edge=pass,firefox=pass",
