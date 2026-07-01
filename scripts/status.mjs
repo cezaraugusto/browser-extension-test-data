@@ -30,12 +30,12 @@ function main() {
   const pct = ((f.pass / f.attempted) * 100).toFixed(1)
 
   const lines = [
-    `# ${verdict} — ${diff.cliVersion}`,
+    `# ${verdict} · ${diff.cliVersion}`,
     '',
     `**Framework health:** ${f.pass}/${f.attempted} buildable samples pass (${pct}%) · ${f.skipped} skipped (sample-side/upstream)`,
     `**Framework failures:** ${f.failures.length}${f.failures.length ? '\n' + f.failures.map((id) => `- ❌ \`${id}\``).join('\n') : ''}`,
     `**Confirmed regressions:** ${regressions.length}${regressions.length ? '\n' + regressions.map((id) => `- 🔴 \`${id}\``).join('\n') : ''}`,
-    `**Progressions:** ${diff.progressions.length} · **Criteria:** \`${diff.criteria.hash}\`${skew ? ' (changed — re-baseline required, not a regression)' : ''}`
+    `**Progressions:** ${diff.progressions.length} · **Criteria:** \`${diff.criteria.hash}\`${skew ? ' (changed: re-baseline required, not a regression)' : ''}`
   ]
   const summary = lines.join('\n') + '\n'
 

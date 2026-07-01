@@ -74,11 +74,18 @@ function stage(sample) {
 }
 
 async function build(cli, dir, browser, env) {
-  const r = await execAsync(cli.command, cliArgs(cli, 'build', ['--browser', browser, '--silent']), {
-    cwd: dir,
-    env,
-    timeoutMs: BUILD_TIMEOUT
-  })
+  // Retry once on a hard build failure to absorb transient blips (npx cold-cache
+  // races on fresh CI runners, network). A deterministic failure fails both tries.
+  let r
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    r = await execAsync(cli.command, cliArgs(cli, 'build', ['--browser', browser, '--silent']), {
+      cwd: dir,
+      env,
+      timeoutMs: BUILD_TIMEOUT
+    })
+    if (r.ok) break
+    if (attempt < 2) fs.rmSync(path.join(dir, 'dist'), {recursive: true, force: true})
+  }
   if (!r.ok) return {status: r.timedOut ? 'timeout' : 'fail', ms: r.ms, error: snippet(r.stderr || r.stdout)}
   // Build exited 0: assert the emitted manifest's referenced files were all emitted.
   // A green build that drops declared assets is a silent failure (see lib/integrity.mjs).
@@ -87,6 +94,16 @@ async function build(cli, dir, browser, env) {
     if (!ok) return {status: 'fail', reason: 'missing-assets', ms: r.ms, error: `missing-assets: ${missing.join(', ')}`}
   }
   return {status: 'pass', ms: r.ms, error: null}
+}
+
+// Populate the npx/CLI cache once before the concurrent pool, so a fresh runner's
+// first parallel builds don't race to install the CLI into a cold shared cache.
+function prewarm(cli) {
+  try {
+    exec(cli.command, [...cli.prefix, '--help'], {timeout: 120_000})
+  } catch {
+    /* best-effort */
+  }
 }
 
 // Tier 2: boot dev, resolve when the CLI prints a ready marker, then kill.
@@ -188,11 +205,15 @@ async function main() {
     (s) => s.valid && (onlySet ? onlySet.has(s.id) : selectTier(s))
   )
   if (ONLY_SOURCE) work = work.filter((s) => s.source === ONLY_SOURCE)
+  // Sort by id so a run (and especially --limit) selects the SAME samples on every
+  // platform — filesystem readdir order differs between macOS and Linux otherwise.
+  work.sort((a, b) => a.id.localeCompare(b.id))
   if (LIMIT > 0) work = work.slice(0, LIMIT)
   RUNTIME_SET = new Set(has('runtime') ? readJson(path.join(ROOT, 'runtime.json'), {samples: []}).samples : [])
 
   const effectiveBrowsers = BROWSERS.filter((b) => b !== 'safari' || IS_MAC)
   console.log(`CLI: ${cli.label}  |  tier=${TIER}  install=${DO_INSTALL}  |  ${work.length} samples × [${BROWSERS.join(', ')}]${!IS_MAC && BROWSERS.includes('safari') ? ' (safari→skip)' : ''}  |  concurrency ${CONCURRENCY}`)
+  prewarm(cli)
 
   let done = 0
   const results = await pool(work, CONCURRENCY, async (sample) => {

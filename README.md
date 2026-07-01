@@ -3,149 +3,93 @@
 [![Weekly QA](https://github.com/cezaraugusto/browser-extension-test-data/actions/workflows/weekly-qa.yml/badge.svg)](https://github.com/cezaraugusto/browser-extension-test-data/actions/workflows/weekly-qa.yml)
 [![Smoke](https://github.com/cezaraugusto/browser-extension-test-data/actions/workflows/smoke.yml/badge.svg)](https://github.com/cezaraugusto/browser-extension-test-data/actions/workflows/smoke.yml)
 
-> Automated QA testbed. Fetches real-world browser-extension samples from their
-> upstream repositories every week and verifies that [Extension.js](https://github.com/extension-js/extension.js)
-> can build and run them, the same way it builds the first-party examples.
+Real-world proof that [Extension.js](https://github.com/extension-js/extension.js) builds the extensions people actually ship.
 
-The headline question this answers: **can the published Extension.js CLI take an
-extension it did not author (straight from MDN, Chrome, Chromium, Edge, Opera)
-and build it unchanged?** Regressions in that answer are caught automatically.
+Every week this testbed pulls hundreds of live browser-extension samples straight from their upstream repositories (MDN, Chrome, Chromium, Edge, Opera, and the Extension.js examples) and builds each one with the published Extension.js CLI. One question, answered on a schedule: can the framework take an extension it did not author and build it, unchanged, across Chrome, Firefox, and Edge? The badges above are the live answer.
+
+## Why this exists
+
+A framework is only as good as the real projects it can run. Synthetic fixtures pass; production extensions surprise you. So instead of hand-written test cases, this repo tests against the actual sample corpuses developers learn from and copy. When a release breaks one of them, we know before users do.
+
+The result is a single, honest signal: **framework health**. Of the samples Extension.js is responsible for, how many build correctly right now?
 
 ## How it works
 
 ```
-sources.json ──▶ sync ──▶ discover ──▶ run-matrix ──▶ report
-   registry      clone      find every    extension      diff vs
-   of upstream   + pin SHA  manifest.json build <s>      baseline.json
-   repos         (.cache/)  + classify    --browser b    → regressions
+sources.json ─▶ sync ─▶ discover ─▶ run-matrix ─▶ report ─▶ status
+   registry     clone     find        build every    diff vs      CLEAN /
+   of repos     + pin     samples      sample per     baseline     NOT CLEAN
+               the SHA    + classify   browser        + guards      verdict
 ```
 
-| Stage | Script | What it does |
-|-------|--------|--------------|
-| **sync** | `scripts/sync.mjs` | For each enabled source, `git ls-remote` the latest SHA, shallow-clone into `.cache/<id>` (gitignored, never vendored), pin the tested SHA in `sources.lock.json`, and report which sources changed since last run. |
-| **discover** | `scripts/discover.mjs` | Enumerate samples per source `layout` (see below), classify each (manifest version incl. vendor-prefixed keys, `chrome.*` vs `browser.*`, entrypoints, `raw` vs `install` tier). → `reports/samples.json`. |
-| **run-matrix** | `scripts/run-matrix.mjs` | Stage each sample into an isolated temp dir, then `extension build --browser <b>` per target browser; record `pass`/`fail`/`timeout`/`skip` and the resolved CLI version. → `reports/latest.json`. |
-| **report** | `scripts/report.mjs` | Diff `latest.json` against `baseline.json`. Exits non-zero (CI red) **only on regressions**. → `reports/diff.json` + `reports/REPORT.md`. |
+| Stage | What it does |
+|-------|--------------|
+| **sync** | Fetches the latest commit of each source, shallow-clones it into `.cache/` (gitignored, never vendored), and pins the tested SHA in `sources.lock.json`. |
+| **discover** | Walks each clone, records every extension sample, and classifies it (manifest version, `chrome.*` vs `browser.*`, entrypoints, whether it needs a build step). |
+| **run-matrix** | Builds each sample per target browser in an isolated workspace and records `pass` / `fail` / `timeout` / `skip`, plus the exact CLI version under test. |
+| **report** | Diffs the run against `baseline.json` and computes framework health. |
+| **status** | Prints the one verdict that matters: `CLEAN` or `NOT CLEAN`, with the numbers behind it. |
 
-### Two things that make verdicts trustworthy
+## Framework health, not "all green"
 
-**Isolated staging.** Extension.js resolves the project root by walking *up* from a
-sample to the nearest `package.json`/`.git`, and writes `dist/` + installs deps
-there. So the matrix copies every sample into its own dir under the OS temp
-directory (outside this repo) before building; otherwise samples in one source
-would share an output dir and clobber each other, and a sample staged inside this
-package would wrongly resolve *this package* as its root. (Both were real bugs.)
+Hundreds of third-party extensions will never all build, and that is fine. Some reference their own pre-built output, some ship CSS pointing at assets they forgot to include, one even commits invalid JavaScript upstream. Those live in `skips.json` with a category and a hand-verified reason, and they are excluded from the score.
 
-**Asset integrity.** Exit code 0 isn't enough; a build can succeed while silently
-dropping files the manifest declares. After every passing build, `run-matrix` reads the
-*emitted* `dist/<browser>/manifest.json` and asserts every local file it references
-(icons, theme images, content scripts, web-accessible resources, HTML entrypoints, …)
-actually exists in `dist/`; if not, the verdict becomes `fail:missing-assets`. This
-caught 5 themes whose images were never emitted (4 of them scored "green" by exit code
-alone, see `bug-reports/05-…`). Disable with `--no-integrity`.
-
-**Layout-aware discovery.** `sources.json` `layout` controls enumeration:
-`manifest-root` (MDN/Chrome: a sample is any dir directly holding `manifest.json`)
-vs `project-root` (Extension.js examples: each child of `scan` is a sample whose
-manifest lives at `src/manifest.json`; building from `src/` instead of the project
-root strips the loader config and produces phantom failures).
-
-### Build tiers
-
-`discover` tags each sample `raw` (no deps) or `install` (carries a `package.json`
-build step). `run-matrix --tier all --install` builds the whole corpus in one pass:
-install-tier samples get `npm install` first, raw samples build as-is. Without
-`--install`, install-tier samples are recorded `skip:needs-install` so they never
-count as failures.
-
-### Framework health vs. sample-side skips
-
-Not every failure is Extension.js's fault: some samples reference their own pre-built
-`dist/` output, ship CSS pointing at absent assets, or (in one case) commit invalid JS
-upstream. Those live in `skips.json` with a category + hand-verified reason. The matrix
-records them as `skip` (doesn't build them), and the report excludes them so the headline
-number (**framework health**) answers exactly one question: *of the samples Extension.js
-is responsible for, how many build correctly?* A non-skipped failure is a real product
-defect; a skipped one is the sample's. `report` prints e.g.
+What is left is the number worth trusting:
 
 ```
-Framework health on 3.18.4-canary.322.7da5ffe: 212/212 buildable samples pass (100.0%)
-  · 9 skipped (sample-side/upstream) · 0 framework failures
+✅ CLEAN · 4.0.3
+Framework health: 212/212 buildable samples pass (100.0%) · 9 skipped (sample-side/upstream)
+Framework failures: 0 · Confirmed regressions: 0
 ```
 
-Run with `--no-skips` to build the skip-listed samples anyway (e.g. to re-check whether
-upstream fixed one). Removing an entry from `skips.json` lets a sample re-enter the matrix.
+A non-skipped failure is a real product defect. A skipped one is the sample's problem, not the framework's. Run `--no-skips` to build the skipped samples anyway, for example to check whether upstream fixed one.
 
-### Why a baseline instead of "all green"
+## Verdicts you can trust
 
-Hundreds of third-party extensions will never all build; many use bundler steps,
-native-messaging hosts, or conventions Extension.js doesn't (yet) support. So we
-don't gate on green. We gate on **change**:
+The gate stays quiet unless something is genuinely wrong. Four mechanisms make that true:
 
-- **regression**: built last week, fails now → CI red, issue opened.
-- **progression**: failed last week, builds now → Extension.js improved.
-- **new / removed**: upstream added/deleted a sample → triage and re-baseline.
-
-`baseline.json` is the accepted state. After reviewing a run, run
-`npm run baseline:update` to record current verdicts.
-
-### Guarding against false regressions
-
-Two guards keep the weekly gate from paging on non-regressions:
-
-**Criteria fingerprint (baseline/harness skew).** A baseline is only comparable to a
-run scored under the same rules. `baseline.json` stores a `criteria` hash of the
-scoring inputs (integrity on/off, target browsers, skip list). If a run's criteria
-differ — e.g. a new check makes things stricter — `report` **suppresses regressions**
-and prints *"criteria changed — re-baseline required"* (exits 0) instead of firing a red
-alarm. This is what caused the early false-regression issue: the integrity check was
-added but the baseline predated it, so `pass → fail` read as a regression when the
-product hadn't changed.
-
-**Confirm-before-alert (flaky infra).** Before the weekly job opens an issue,
-`scripts/confirm-regressions.mjs` re-runs *only* the regressing samples (up to
-`QA_CONFIRM_ATTEMPTS`, default 2). Any that clear on re-run were transient
-infrastructure (npm/registry/network) and are dropped; the issue opens only on
-regressions that survive every re-run. The workflow gates on this step, not on the
-raw report.
+- **Isolated builds.** Every sample is staged into its own throwaway workspace before building, so parallel builds never share an output directory or resolve the wrong project root.
+- **Asset integrity.** A build that exits `0` can still drop files the manifest declares. After each passing build, the emitted `manifest.json` is checked against `dist/`; a missing icon or theme image flips the verdict to `fail:missing-assets`. This caught five broken themes that exit codes alone called green.
+- **Criteria fingerprint.** A baseline is only comparable to a run scored under the same rules. `baseline.json` stores a hash of those rules, and when they change the report asks for a re-baseline instead of firing a false regression.
+- **Confirm before alerting.** Before the weekly job opens an issue, it re-runs only the regressing samples. Anything that clears on a retry was flaky infrastructure and is dropped. Only failures that survive every retry count.
 
 ## Usage
 
 ```sh
-npm run qa            # full pipeline: sync → discover → matrix → report
-npm run sync          # just refresh upstream clones + lock
-npm run discover      # just rebuild the sample list
-npm run matrix        # full corpus: --tier all --install --browsers chrome,firefox,edge
-npm run matrix:smoke  # fast 12-sample raw slice for a sanity check
-npm run baseline:update   # accept current verdicts as the new baseline
+npm run qa       # full pipeline: sync, discover, build the corpus, report, verdict
+npm run smoke    # fast slice for a quick health check
+npm run status   # print the current CLEAN / NOT CLEAN verdict
+npm run sync     # refresh upstream clones and the lock
+npm run discover # rebuild the sample list
+
+npm run baseline:update  # accept the current run as the new baseline
 ```
 
-Scope a run:
+Scope a run when you need to:
 
 ```sh
-node scripts/run-matrix.mjs --source mdn --browsers chrome,firefox --concurrency 6
-node scripts/run-matrix.mjs --tier install --install --source extensionjs   # deps + build
-node scripts/run-matrix.mjs --limit 20        # cap sample count
+node scripts/run-matrix.mjs --source mdn --browsers chrome,firefox
+node scripts/run-matrix.mjs --tier install --install --source extensionjs
+node scripts/run-matrix.mjs --limit 20
 ```
 
-Targets: `chrome`, `firefox`, `edge` (Chromium/Gecko, run on Linux). `safari`
-builds via Xcode and runs only on macOS; elsewhere it records `skip:non-macos`.
-The weekly workflow runs a gating Linux lane (chrome/firefox/edge → `baseline.json`)
-and a non-gating macOS lane (adds safari → `baseline.safari.json`).
+Targets are `chrome`, `firefox`, and `edge` on Linux. `safari` builds through Xcode and runs on macOS only; elsewhere it records `skip:non-macos`.
 
-### Which CLI is tested
+## Which CLI gets tested
 
-Resolved in `scripts/lib/cli.mjs`, mirroring the first-party examples repo:
+By default the testbed runs the published `extension@latest`, the exact version users install. Override it to gate a release early or to try an unreleased build:
 
-| Env | Effect |
-|-----|--------|
-| _(none)_ | `npx -y extension@latest` (what users get, cron default). |
-| `EXTENSION_TAG=canary` | test the next release before publish. |
-| `EXTENSION_CLI_PATH=/abs/cli.cjs` | test an unreleased local build. |
+| Setting | Effect |
+|---------|--------|
+| _(default)_ | `extension@latest`, the shipped CLI. |
+| `EXTENSION_TAG=canary` | test the next release before it publishes. |
+| `EXTENSION_CLI_PATH=/abs/cli.cjs` | test a local, unreleased build. |
 
-## Adding a source
+Every report records the resolved version (for example `4.0.3`), so a regression always maps to a specific release.
 
-Append to `sources.json`, no code changes:
+## Add a source
+
+Extend the corpus by adding one entry to `sources.json`. No code changes:
 
 ```json
 {
@@ -160,22 +104,14 @@ Append to `sources.json`, no code changes:
 }
 ```
 
-`scan` lists directories to search (each top-most `manifest.json` = one sample);
-`ignore` prunes the walk. Set `enabled: false` to register a candidate without
-running it. Edge/Opera/Chromium ship disabled with notes until their upstream
-URLs are confirmed (Chromium needs a sparse-checkout strategy; see its note).
+`scan` picks the directories to search, `ignore` prunes the walk, and `enabled: false` registers a candidate without running it yet.
 
 ## Automation
 
-`.github/workflows/weekly-qa.yml` runs Mondays 06:00 UTC (and on demand). It runs
-the full pipeline against `extension@latest`, uploads `reports/` as an artifact,
-and opens a `qa-regression` issue (body = `REPORT.md`) if anything regressed.
+Two workflows keep the badges honest:
 
-## Legacy
-
-The top-level `chrome/`, `chromium/`, `mdn/`, `extension-create/` directories are
-the **old 2023 vendored snapshot**. They're kept only until the automated fetch is
-trusted, then should be removed; the `.cache/` clones supersede them entirely.
+- **Smoke** runs on every push and pull request that touches the testbed. It builds a fast, deterministic slice and posts a `CLEAN` / `NOT CLEAN` verdict in minutes.
+- **Weekly QA** runs Mondays at 06:00 UTC (and on demand). It builds the full corpus against `extension@latest`, renders the verdict to the run summary, and opens an issue only when a regression survives a re-run.
 
 ## License
 
