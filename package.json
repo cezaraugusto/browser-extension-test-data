@@ -17,7 +17,8 @@
     "matrix:raw": "node scripts/run-matrix.mjs --tier raw --browsers chrome,firefox,edge",
     "matrix:smoke": "node scripts/run-matrix.mjs --tier raw --browsers chrome,firefox --limit 12",
     "report": "node scripts/report.mjs --markdown",
-    "qa": "node scripts/sync.mjs && node scripts/discover.mjs && npm run matrix && node scripts/report.mjs --markdown",
+    "status": "node scripts/status.mjs",
+    "qa": "node scripts/sync.mjs && node scripts/discover.mjs && npm run matrix && node scripts/report.mjs --markdown && node scripts/status.mjs",
     "baseline:update": "node scripts/report.mjs --update"
   }
 }

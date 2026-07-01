@@ -43,11 +43,16 @@ jobs:
       - name: Report
         run: node scripts/report.mjs --markdown
         continue-on-error: true
-      # The real gate: re-run only the regressing samples; a regression that
-      # clears on re-run was flaky infra and is dropped. Exits non-zero only on
-      # CONFIRMED regressions — that's the sole trigger for a weekly issue.
+      # Re-run only the regressing samples; a regression that clears on re-run was
+      # flaky infra and is dropped. Writes confirmed-regressions.json. Don't gate
+      # here — status.mjs is the single verdict.
       - id: confirm
         run: node scripts/confirm-regressions.mjs
+        continue-on-error: true
+      # Single "are we clean?" verdict → job summary (shown on the run page and via
+      # the README badge) + the job's pass/fail gate.
+      - name: Status
+        run: node scripts/status.mjs
       - if: always()
         uses: actions/upload-artifact@v4
         with: {name: qa-report-linux, path: reports/}
@@ -85,6 +90,10 @@ jobs:
       - run: node scripts/discover.mjs
       - run: node scripts/run-matrix.mjs --tier all --install --browsers chrome,firefox,edge,safari
       - run: node scripts/report.mjs --markdown --baseline baseline.safari.json
+        continue-on-error: true
+      - name: Status
+        run: node scripts/status.mjs
+        continue-on-error: true
       - if: always()
         uses: actions/upload-artifact@v4
         with: {name: qa-report-macos, path: reports/}

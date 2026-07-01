@@ -1,5 +1,7 @@
 # Browser Extension Test Data
 
+[![Weekly QA](https://github.com/cezaraugusto/browser-extension-test-data/actions/workflows/weekly-qa.yml/badge.svg)](https://github.com/cezaraugusto/browser-extension-test-data/actions/workflows/weekly-qa.yml)
+
 > Automated QA testbed. Fetches real-world browser-extension samples from their
 > upstream repositories every week and verifies that [Extension.js](https://github.com/extension-js/extension.js)
 > can build and run them, the same way it builds the first-party examples.
