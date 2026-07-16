@@ -1,0 +1,23 @@
+{
+  "source": "extensionjs",
+  "name": "Extension.js first-party examples",
+  "repo": "https://github.com/extension-js/examples",
+  "ref": "main",
+  "sha": "f414697317ee03a91a3b190597b458c085ba41ff",
+  "vendoredAt": "2026-07-16T14:18:03.624Z",
+  "scan": [
+    "examples"
+  ],
+  "vendorInclude": [],
+  "prunedTopLevel": [
+    "node_modules",
+    "dist",
+    "build",
+    ".extension",
+    "public",
+    "scripts"
+  ],
+  "treeHash": "b4b5705fed9cbba7",
+  "files": 863,
+  "bytes": 19831768
+}

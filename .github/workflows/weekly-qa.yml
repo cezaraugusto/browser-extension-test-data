@@ -33,6 +33,12 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: 20}
       - run: node scripts/sync.mjs
+      # Corpus guard: tracked corpus dirs must be exactly what vendor.mjs wrote
+      # (tamper gates the job). Also reports how far upstream moved past the
+      # vendored cut; drift is informational: refreshing the corpus is a
+      # deliberate `npm run vendor` + commit after a CLEAN run, never automatic.
+      - name: Vendored corpus check
+        run: node scripts/vendor.mjs --check
       - run: node scripts/discover.mjs
       # One pass over the whole corpus: install-tier samples get `npm install`,
       # raw samples build as-is. Produces a single complete report.

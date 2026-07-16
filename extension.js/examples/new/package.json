@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "name": "new",
+  "description": "New tab page example using plain JavaScript. Renders a simple page you can customize.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "type": "module",
+  "author": {
+    "name": "Cezar Augusto",
+    "email": "boss@cezaraugusto.net",
+    "url": "https://cezaraugusto.com"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

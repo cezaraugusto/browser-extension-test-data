@@ -1,0 +1,22 @@
+{
+  "source": "mdn",
+  "name": "MDN webextensions-examples",
+  "repo": "https://github.com/mdn/webextensions-examples",
+  "ref": "main",
+  "sha": "e6ea7e26d10ff87e4e861da1e6c7aeb6501f0c5a",
+  "vendoredAt": "2026-07-16T14:18:02.128Z",
+  "scan": [
+    "."
+  ],
+  "vendorInclude": [],
+  "prunedTopLevel": [
+    "node_modules",
+    "build",
+    "dist",
+    ".github",
+    "celtic_diary_data"
+  ],
+  "treeHash": "e061e260af9fb08e",
+  "files": 527,
+  "bytes": 4833222
+}

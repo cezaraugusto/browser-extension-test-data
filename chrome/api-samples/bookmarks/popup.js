@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,7 +42,6 @@ function displayBookmarks(nodes, parentNode) {
 function addBookmark() {
   chrome.bookmarks.create(
     {
-      parentId: '1',
       title: 'Google',
       url: 'https://www.google.com'
     },

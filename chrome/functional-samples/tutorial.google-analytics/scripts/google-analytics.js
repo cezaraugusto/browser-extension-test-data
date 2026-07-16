@@ -9,9 +9,20 @@ const DEFAULT_ENGAGEMENT_TIME_MSEC = 100;
 // Duration of inactivity after which a new session is created
 const SESSION_EXPIRATION_IN_MIN = 30;
 
-export class Analytics {
+class Analytics {
   constructor(debug = false) {
     this.debug = debug;
+  }
+
+  getRandomId() {
+    const digits = '123456789'.split('');
+    let result = '';
+
+    for (let i = 0; i < 10; i++) {
+      result += digits[Math.floor(Math.random() * 9)];
+    }
+
+    return result;
   }
 
   // Returns the client id, or creates a new one if one doesn't exist.
@@ -20,8 +31,10 @@ export class Analytics {
   async getOrCreateClientId() {
     let { clientId } = await chrome.storage.local.get('clientId');
     if (!clientId) {
-      // Generate a unique client ID, the actual value is not relevant
-      clientId = self.crypto.randomUUID();
+      // Generate a unique client ID, the actual value is not relevant. We use
+      // the <number>.<number> format since this is typical for GA client IDs.
+      const unixTimestampSeconds = Math.floor(new Date().getTime() / 1000);
+      clientId = `${this.getRandomId()}.${unixTimestampSeconds}`;
       await chrome.storage.local.set({ clientId });
     }
     return clientId;

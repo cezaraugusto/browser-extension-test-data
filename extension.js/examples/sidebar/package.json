@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "name": "sidebar",
+  "description": "Sidebar panel example. Adds a sidebar to the browser with a simple page.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "type": "module",
+  "author": {
+    "name": "Cezar Augusto",
+    "email": "boss@cezaraugusto.net",
+    "url": "https://cezaraugusto.com"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

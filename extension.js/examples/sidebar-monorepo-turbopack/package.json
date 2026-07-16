@@ -1,0 +1,30 @@
+{
+  "private": true,
+  "name": "sidebar-monorepo-turbopack",
+  "description": "Sidebar + content_script monorepo example using Extension.js with Turbopack.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "type": "module",
+  "author": {
+    "name": "Cezar Augusto",
+    "email": "boss@cezaraugusto.net",
+    "url": "https://cezaraugusto.com"
+  },
+  "workspaces": [
+    "packages/*",
+    "clients/*"
+  ],
+  "scripts": {
+    "dev": "extension dev packages/extension",
+    "start": "extension start packages/extension",
+    "build": "extension build packages/extension",
+    "preview": "extension preview packages/extension",
+    "build:chrome": "extension build packages/extension --browser=chrome",
+    "build:edge": "extension build packages/extension --browser=edge",
+    "build:firefox": "extension build packages/extension --browser=firefox"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.3"
+  },
+  "packageManager": "pnpm@8.15.0"
+}

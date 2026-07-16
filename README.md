@@ -7,6 +7,8 @@ Real-world proof that [Extension.js](https://github.com/extension-js/extension.j
 
 Every week this testbed pulls hundreds of live browser-extension samples straight from their upstream repositories (MDN, Chrome, Chromium, Edge, Opera, and the Extension.js examples) and builds each one with the published Extension.js CLI. One question, answered on a schedule: can the framework take an extension it did not author and build it, unchanged, across Chrome, Firefox, and Edge? The badges above are the live answer.
 
+The repo is also the corpus itself. Every validated sample set lives here as a browsable, pinned copy ([`mdn/`](mdn), [`chrome/`](chrome), [`chromium/`](chromium), and [`extension.js/`](extension.js)) indexed by [`catalog.json`](catalog.json), so downstream test suites can consume real-world extension data straight from a checkout, no sync required.
+
 ## Why this exists
 
 A framework is only as good as the real projects it can run. Synthetic fixtures pass; production extensions surprise you. So instead of hand-written test cases, this repo tests against the actual sample corpuses developers learn from and copy. When a release breaks one of them, we know before users do.
@@ -24,11 +26,41 @@ sources.json ─▶ sync ─▶ discover ─▶ run-matrix ─▶ report ─▶ 
 
 | Stage | What it does |
 |-------|--------------|
-| **sync** | Fetches the latest commit of each source, shallow-clones it into `.cache/` (gitignored, never vendored), and pins the tested SHA in `sources.lock.json`. |
+| **sync** | Fetches the latest commit of each source, shallow-clones it into `.cache/` (gitignored working copies), and pins the tested SHA in `sources.lock.json`. |
 | **discover** | Walks each clone, records every extension sample, and classifies it (manifest version, `chrome.*` vs `browser.*`, entrypoints, whether it needs a build step). |
 | **run-matrix** | Builds each sample per target browser in an isolated workspace and records `pass` / `fail` / `timeout` / `skip`, plus the exact CLI version under test. |
 | **report** | Diffs the run against `baseline.json` and computes framework health. |
 | **status** | Prints the one verdict that matters: `CLEAN` or `NOT CLEAN`, with the numbers behind it. |
+| **vendor** | Promotes a validated snapshot into the tracked corpus dirs and regenerates `catalog.json`. Runs by hand, after a `CLEAN` verdict. |
+
+## The corpus is a product
+
+The tracked sample dirs are not a convenience copy; they are the second thing this repo ships. Each one is a pinned snapshot of an upstream corpus, promoted only after the full matrix came back `CLEAN`:
+
+```
+mdn/            MDN webextensions-examples        (browser.* API, manifest at sample root)
+chrome/         Chrome extension samples           (+ _archive/: retired MV2 samples, kept as data)
+extension.js/   Extension.js first-party examples  (project-root layout, manifest under src/)
+chromium/       Chromium test extensions           (frozen curated subset; includes intentionally broken manifests)
+```
+
+Three files make the corpus safe to consume:
+
+- **`VENDORED.json`** (one per dir) records where the data came from: upstream repo, the exact SHA vendored, and a deterministic tree hash. CI recomputes the hash on every run, so a hand-edited sample can't silently fork upstream.
+- **`catalog.json`**: the committed index of every sample: id, root dir, manifest path, MV2/MV3, `chrome.*` vs `browser.*`, entrypoints, build-step flag. Consume this instead of globbing for `manifest.json`: Extension.js-style samples keep their manifest under `src/`, and the sample root (the catalog's `dir`) is the only correct build root. Entries with `matrix: false` are catalog-only data (archived or intentionally broken samples) that the QA matrix never builds.
+- **`sources.lock.json`**: the SHA currently under test, which may run ahead of the vendored cut between refreshes.
+
+Refreshing the corpus is deliberate, never automatic:
+
+```sh
+npm run qa             # sync to upstream latest, build everything
+npm run status         # CLEAN?
+npm run vendor         # promote the validated snapshot into the tracked dirs
+npm run discover:vendored   # regenerate catalog.json
+git commit             # the refresh is a reviewed diff
+```
+
+The harness itself runs from either side: default mode tests upstream-latest in `.cache/`, `--vendored` runs the identical sample ids from the tracked dirs (deterministic, offline). `baseline.json` and `skips.json` apply unchanged in both modes.
 
 ## Framework health, not "all green"
 
@@ -61,6 +93,7 @@ npm run smoke    # fast slice for a quick health check
 npm run status   # print the current CLEAN / NOT CLEAN verdict
 npm run sync     # refresh upstream clones and the lock
 npm run discover # rebuild the sample list
+npm run vendor:check  # corpus integrity + drift vs the lock
 
 npm run baseline:update  # accept the current run as the new baseline
 ```

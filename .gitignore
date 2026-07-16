@@ -10,9 +10,12 @@ reports/*
 !reports/.gitkeep
 
 # Build output (samples build in OS temp; this guards against stray local builds).
-dist/
-build/
-.extension/
+# Anchored to the repo root on purpose: vendored samples legitimately commit
+# nested dist/build dirs upstream (e.g. chrome/_archive), and an unanchored
+# pattern would shadow them from git while vendor.mjs --check still hashes them.
+/dist/
+/build/
+/.extension/
 
 node_modules/
 .DS_Store

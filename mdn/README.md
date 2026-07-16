@@ -54,8 +54,6 @@ To run an example extension:
 1. Open Firefox and load the `about:debugging` page. Click 
    [Load Temporary Add-on](https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Temporary_Installation_in_Firefox)
    and select the `manifest.json` file within the folder of an example extension.
-   Here is a [video](https://www.youtube.com/watch?v=cer9EUKegG4)
-   that demonstrates how to do this.
 2. Install the
    [web-ext](https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Getting_started_with_web-ext)
    tool. At the command line, open the example extension's folder and type
@@ -82,10 +80,7 @@ for getting started guides, tutorials, and full API reference docs.
 
 ## Problems?
 
-If you encounter an issue:
-- post a query on the [add-ons discourse forum](https://discourse.mozilla.org/c/add-ons)
-- email the [dev-addons mailing list](https://mail.mozilla.org/listinfo/dev-addons)
-- contact the add-ons team in the [Add-ons room](https://chat.mozilla.org/#/room/#addons:mozilla.org) on [Matrix](https://wiki.mozilla.org/Matrix)
+If you encounter an issue, post a query on the [add-ons discourse forum](https://discourse.mozilla.org/c/add-ons).
 
 If you cannot resolve the issue, [file a bug](https://github.com/mdn/webextensions-examples/issues/new).
 

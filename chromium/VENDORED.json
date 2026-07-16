@@ -1,0 +1,11 @@
+{
+  "source": "chromium",
+  "name": "Chromium test extensions",
+  "repo": "https://chromium.googlesource.com/chromium/src",
+  "frozen": true,
+  "note": "Chromium has no standalone samples repo; cloning the full tree is huge. The tracked chromium/ dir is a frozen curated subset of the upstream test extensions (vendored 2023-06, stamped + integrity-checked, catalog-only). Enable live sync only with a sparse-checkout strategy (planned).",
+  "vendoredAt": "2026-07-16T14:18:03.644Z",
+  "treeHash": "757d307530f5b1ee",
+  "files": 410,
+  "bytes": 464195
+}

@@ -1,8 +1,10 @@
 name: Smoke
 
 # Fast clean/not-clean check on every push/PR that touches the testbed, so the
-# badge and the Actions status reflect the current code — not just the weekly
-# full-corpus run. Builds a small raw slice (no installs) against extension@latest.
+# badge and the Actions status reflect the current code, not just the weekly
+# full-corpus run. Builds a small raw slice (no installs) against extension@latest,
+# straight from the tracked (vendored) corpus: no upstream sync, no network flake,
+# and a corpus refresh commit gets build-validated by the same lane.
 on:
   push:
     branches: [main]
@@ -10,12 +12,22 @@ on:
       - 'scripts/**'
       - 'sources.json'
       - 'skips.json'
+      - 'catalog.json'
+      - 'mdn/**'
+      - 'chrome/**'
+      - 'chromium/**'
+      - 'extension.js/**'
       - '.github/workflows/smoke.yml'
   pull_request:
     paths:
       - 'scripts/**'
       - 'sources.json'
       - 'skips.json'
+      - 'catalog.json'
+      - 'mdn/**'
+      - 'chrome/**'
+      - 'chromium/**'
+      - 'extension.js/**'
   workflow_dispatch:
 
 jobs:
@@ -28,8 +40,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: 20}
-      - run: node scripts/sync.mjs
-      - run: node scripts/discover.mjs
+      # Tracked corpus must be exactly what vendor.mjs wrote (hand-edits gate here).
+      - run: node scripts/vendor.mjs --check
+      - run: node scripts/discover.mjs --vendored
       # Fast slice: 12 raw samples × chrome,firefox (no installs).
       - run: node scripts/run-matrix.mjs --tier raw --browsers chrome,firefox --limit 12
       - run: node scripts/report.mjs --no-baseline
