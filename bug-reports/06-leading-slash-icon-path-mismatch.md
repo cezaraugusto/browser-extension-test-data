@@ -2,7 +2,7 @@
 
 **CLI:** reproduced on `extension@3.18.4` **and `…canary.321.403955d`**
 **Severity:** high: the packaged manifest references icon files that don't exist at that path; build is green
-**Status:** ✅ FIXED: branch `fix/page-script-tla-and-vendored-minjs-passthrough`, commit `7da5ffed` (pending a fresh canary)
+**Status:** ✅ FIXED, validated on `extension@4.0.11-canary.1784162195.5105e379` (2026-07-15): manifest keeps `images/` and all four icons are emitted there
 
 ## Resolution (2026-06-18)
 

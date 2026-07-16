@@ -2,7 +2,7 @@
 
 **CLI:** reproduced on `extension@3.18.4`, `…canary.320.767e107`, **and `…canary.321.403955d`**
 **Severity:** high: every theme produces a broken build; the manifest points at images that don't ship
-**Status:** ✅ FIXED on branch `fix/page-script-tla-and-vendored-minjs-passthrough`: pending a fresh canary
+**Status:** ✅ FIXED, validated on `extension@4.0.11-canary.1784162195.5105e379` (2026-07-15): theme image emitted at the rewritten manifest path
 
 ## Resolution (2026-06-18)
 
