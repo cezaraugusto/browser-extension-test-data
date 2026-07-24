@@ -29,8 +29,8 @@ jobs:
       EXTENSION_TAG: ${{ github.event.inputs.extension_tag || 'latest' }}
       QA_CONCURRENCY: '6'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with: {node-version: 20}
       - run: node scripts/sync.mjs
       # Corpus guard: tracked corpus dirs must be exactly what vendor.mjs wrote
@@ -89,8 +89,8 @@ jobs:
       EXTENSION_TAG: ${{ github.event.inputs.extension_tag || 'latest' }}
       QA_CONCURRENCY: '4'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with: {node-version: 20}
       - run: node scripts/sync.mjs
       - run: node scripts/discover.mjs
